@@ -1,74 +1,82 @@
 # klinika-web Product Requirements
 
-## Document status
+## Authority and status
 
-This is a Phase 0 requirements record, not the complete approved master PRD. The requested source file, `projectplan.md`, was inspected on October 22, 2026 and is empty. Only requirements explicitly present in the task are marked confirmed. Proposed scope is isolated so it can be accepted, changed, or removed without being mistaken for approved behavior.
+[`projectplan.md`](../projectplan.md) is the complete master PRD and the primary source of truth. This file is a concise implementation reference; it does not replace or override the master.
 
-## Confirmed requirements
+The repository previously proceeded from provisional multi-clinic requirements while `projectplan.md` was empty. Those assumptions are superseded. Existing code is preserved for review, but conflicting behavior is not an approved product requirement.
 
-- Product name: klinika-web.
-- Product category: production-oriented clinic appointment management system.
-- The application supports multiple clinics with clinic-scoped memberships and roles.
-- Intended stack: the latest compatible Laravel release (currently Laravel 13), Livewire, Blade, Tailwind CSS, PostgreSQL, and Render.
-- Laravel conventions and security and database-integrity controls are required.
-- Phase 3 is staff-operated: administrators and receptionists manage patients and appointments; practitioners have read-only access to their own schedule; patient self-service is excluded.
-- Appointment starts use 15-minute intervals, duration comes from the service, overbooking is prohibited, and both practitioner and patient overlaps are blocked.
-- Approved statuses are Pending, Confirmed, Completed, Cancelled, and NoShow using the transitions recorded in `docs/BUSINESS_RULES.md`.
-- Architecture should remain simple and maintainable, without unnecessary packages or abstractions.
-- Phase 0 is documentation and planning only. Feature implementation, Laravel initialization, and deployment are excluded.
+## Product scope
 
-## Proposed product boundary (requires approval)
+klinika-web is a standalone appointment platform for **one clinic location with multiple doctors**.
 
-The smallest coherent first release would allow authorized clinic staff to manage practitioners, patients, services, schedules, and appointments. It would include conflict-safe appointment creation, rescheduling, cancellation, role-based access, and an audit trail for sensitive operational changes.
+MVP users are patients, receptionists, and administrators. Patients register, log in without email verification, browse doctors and availability, submit appointment requests, monitor status, and cancel eligible appointments. Receptionists approve or reject requests and manage attendance. Administrators manage doctors, specialties, schedules, unavailability, receptionist accounts, booking policies, and audit information.
 
-The following are not approved because the master PRD is unavailable:
+Explicitly out of scope:
 
-- whether patients can self-register or self-book;
-- whether appointments require staff confirmation;
-- exact appointment statuses and allowed transitions;
-- operating hours, breaks, holidays, buffers, slot intervals, and overbooking policy;
-- practitioner-to-service relationships and service-specific durations;
-- walk-ins, waitlists, recurring appointments, rooms, equipment, and resource conflicts;
-- payments, insurance, billing, refunds, invoices, and deposits;
-- medical records, clinical notes, prescriptions, diagnoses, and attachments;
-- email/SMS reminders and provider choices;
-- timezone, locale, accessibility, privacy jurisdiction, retention, and consent requirements;
-- reporting, exports, integrations, and administrative configuration;
-- recovery objectives, uptime target, expected traffic, and data volume.
+- multi-clinic SaaS or tenant membership;
+- doctor login accounts;
+- walk-in registration;
+- medical records, diagnoses, prescriptions, or clinical notes;
+- payments;
+- in-place appointment rescheduling;
+- React, Next.js, Inertia, a separate SPA, or a separate REST API.
 
-## Proposed actors (requires approval)
+## Roles
 
-| Actor | Proposed responsibility |
-| --- | --- |
-| Administrator | Manage clinic configuration, users, roles, services, schedules, and reports. |
-| Receptionist | Manage patients and the appointment lifecycle, without security administration. |
-| Practitioner | View own schedule and permitted patient/appointment details; update appointment outcomes if required. |
-| Patient | Self-service booking and own appointments only if a patient portal is approved. |
+### Patient
 
-No role may access another clinic's data if multi-clinic operation is approved. Authorization must be policy-based and enforced server-side.
+May self-register, use the account without email verification, manage a basic profile, browse doctors, request an available appointment, view only their own appointments, and cancel within policy. A patient may never choose an arbitrary patient record or access another patient's information.
 
-## Proposed core capabilities (requires approval)
+### Receptionist
 
-1. Authentication and account recovery.
-2. User, role, and clinic membership administration.
-3. Patient directory with duplicate-detection rules.
-4. Practitioner and service configuration.
-5. Weekly availability and dated schedule exceptions.
-6. Conflict-safe appointment creation, rescheduling, cancellation, and status history.
-7. Calendar and list views with server-side filtering.
-8. Audit history for security-sensitive and appointment-changing actions.
-9. Notifications and reporting only after channels, templates, consent, and retention are approved.
+May review pending requests, approve or reject them, operate the appointment calendar, search and inspect appointments, check patients in, complete checked-in appointments, record no-shows, and perform authorized late cancellations with a reason. Receptionists do not create walk-in appointments or administer doctors, clinic policy, or administrator accounts.
 
-## Non-functional requirements to approve
+### Administrator
 
-- Security baseline and applicable privacy law.
-- Availability, latency, backup retention, recovery-point objective, and recovery-time objective.
-- Supported browsers, devices, locales, and timezones.
-- Accessibility target (WCAG 2.2 AA is proposed).
-- Capacity assumptions for clinics, practitioners, patients, appointments, and concurrent booking requests.
-- Observability, incident response, and audit retention.
+May manage doctors, specialties, schedules, unavailability, duration settings, clinic policies, receptionist accounts, summaries, configuration, and audit history. Administrators are provisioned securely and never through public registration.
 
-## Acceptance gate
+## Appointment lifecycle
 
-Phase 1 was authorized with unresolved product decisions explicitly deferred. Those decisions remain a gate for the affected Phase 2 and later features.
+Statuses are `pending`, `confirmed`, `rejected`, `expired`, `cancelled`, `checked_in`, `completed`, and `no_show`.
 
+Allowed transitions are:
+
+```text
+pending    -> confirmed | rejected | expired | cancelled
+confirmed  -> checked_in | cancelled | no_show
+checked_in -> completed
+```
+
+All other transitions are prohibited. A centralized transition service must authorize, validate, lock, mutate, and audit each transition.
+
+## Default policy
+
+- Clinic timezone: `Asia/Manila`; persist appointment instants in UTC.
+- Appointment duration per doctor: 15, 30, 45, or 60 minutes.
+- Scheduling grid: 15 minutes.
+- Maximum advance booking: 30 days.
+- Minimum lead time: 4 hours.
+- Minimum receptionist review window: 2 hours.
+- Pending expiry: the earlier of 24 hours after submission or 2 hours before start.
+- Patient cancellation cutoff: 2 hours before start.
+- No-show grace period: 15 minutes.
+- Pending and confirmed appointments reserve both doctor and patient slots.
+
+Configuration may alter the policy fields identified in the master PRD, but changes must not rewrite historical appointment duration or silently invalidate existing bookings.
+
+## Non-functional requirements
+
+- Server-side authentication, validation, authorization, ownership enforcement, rate limiting, CSRF protection, secure sessions, safe errors, secrets management, and minimal personal-data collection.
+- Atomic PostgreSQL booking and mutation transactions with deterministic locks and database-enforced unique slot reservations.
+- Append-only appointment events and durable audit records for schedule and configuration changes.
+- Responsive and accessible Blade/Livewire UI with clear states, errors, loading feedback, keyboard focus, and reduced-motion support.
+- Automated authentication, scheduling, booking, workflow, concurrency, and deployment-readiness tests as their phases are implemented.
+- Render deployment only in Phase 9 and only after explicit approval.
+
+## Deferred implementation decisions
+
+1. **Framework major:** the master specifies Laravel 12; the installed and previously approved foundation is Laravel 13. Product-owner confirmation is required to retain Laravel 13 as a controlled deviation.
+2. **Local database:** MariaDB is temporarily accepted for local work. PostgreSQL remains authoritative, and Phase 4 cannot be accepted without PostgreSQL concurrency verification.
+3. **Email verification and delivery:** email verification is removed by product-owner decision. Notification delivery remains deferred and does not gate login or booking.
+4. **Privacy readiness:** jurisdiction, retention, deletion/anonymization, breach response, and real-patient-data approval must be resolved before a production pilot.

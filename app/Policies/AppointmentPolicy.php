@@ -5,7 +5,6 @@ namespace App\Policies;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Role;
-use Illuminate\Auth\Access\Response;
 
 class AppointmentPolicy
 {
@@ -14,19 +13,16 @@ class AppointmentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->clinics()->exists();
+        return $user->is_active && $user->hasRole(Role::Patient, Role::Receptionist);
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Appointment $appointment): Response|bool
+    public function view(User $user, Appointment $appointment): bool
     {
-        $isStaff = $user->hasClinicRole($appointment->clinic, Role::Administrator, Role::Receptionist);
-        $isAssignedPractitioner = $appointment->practitioner->user_id === $user->id
-            && $user->hasClinicRole($appointment->clinic, Role::Practitioner);
-
-        return $isStaff || $isAssignedPractitioner ? true : Response::denyAsNotFound();
+        return $user->is_active && $user->hasRole(Role::Receptionist)
+            || $this->owns($user, $appointment);
     }
 
     /**
@@ -34,17 +30,15 @@ class AppointmentPolicy
      */
     public function create(User $user): bool
     {
-        return $user->clinics()->wherePivotIn('role', [Role::Administrator->value, Role::Receptionist->value])->exists();
+        return false;
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Appointment $appointment): Response|bool
+    public function update(User $user, Appointment $appointment): bool
     {
-        return $user->hasClinicRole($appointment->clinic, Role::Administrator, Role::Receptionist)
-            ? true
-            : Response::denyAsNotFound();
+        return false;
     }
 
     /**
@@ -69,5 +63,22 @@ class AppointmentPolicy
     public function forceDelete(User $user, Appointment $appointment): bool
     {
         return false;
+    }
+
+    public function cancel(User $user, Appointment $appointment): bool
+    {
+        return $this->owns($user, $appointment);
+    }
+
+    public function transition(User $user, Appointment $appointment): bool
+    {
+        return $user->is_active && $user->hasRole(Role::Receptionist);
+    }
+
+    private function owns(User $user, Appointment $appointment): bool
+    {
+        return $user->is_active
+            && $user->hasRole(Role::Patient)
+            && $appointment->patient()->where('user_id', $user->id)->exists();
     }
 }

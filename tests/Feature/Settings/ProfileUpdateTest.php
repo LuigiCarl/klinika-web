@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -35,10 +36,10 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertEquals('Test User', $user->name);
         $this->assertEquals('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertNotNull($user->email_verified_at);
     }
 
-    public function test_email_verification_status_is_unchanged_when_email_address_is_unchanged(): void
+    public function test_legacy_email_verification_timestamp_is_unchanged(): void
     {
         $user = User::factory()->create();
 
@@ -52,6 +53,20 @@ class ProfileUpdateTest extends TestCase
         $response->assertHasNoErrors();
 
         $this->assertNotNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_patient_phone_number_can_be_updated(): void
+    {
+        $patient = Patient::factory()->create(['phone' => null]);
+
+        $this->actingAs($patient->user);
+
+        Livewire::test('pages::settings.profile')
+            ->set('phone', '+63 917 123 4567')
+            ->call('updateProfileInformation')
+            ->assertHasNoErrors();
+
+        $this->assertSame('+63 917 123 4567', $patient->refresh()->phone);
     }
 
     public function test_user_can_delete_their_account(): void

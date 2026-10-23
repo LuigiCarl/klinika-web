@@ -12,14 +12,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
- * @property int $clinic_id
  * @property int $patient_id
- * @property int $practitioner_id
- * @property int $service_id
- * @property int $created_by
+ * @property int $doctor_id
  * @property AppointmentStatus $status
  * @property CarbonInterface $starts_at
  * @property CarbonInterface $ends_at
+ * @property CarbonInterface $expires_at
+ * @property CarbonInterface|null $approved_at
+ * @property CarbonInterface|null $cancelled_at
+ * @property int|null $approved_by
+ * @property int|null $cancelled_by
  * @property string|null $cancellation_reason
  */
 class Appointment extends Model
@@ -27,17 +29,19 @@ class Appointment extends Model
     /** @use HasFactory<AppointmentFactory> */
     use HasFactory;
 
-    protected $fillable = ['clinic_id', 'patient_id', 'practitioner_id', 'service_id', 'created_by', 'status', 'starts_at', 'ends_at', 'idempotency_key', 'cancellation_reason'];
+    protected $fillable = ['patient_id', 'doctor_id', 'reference_code', 'starts_at', 'ends_at', 'duration_minutes', 'status', 'expires_at', 'approved_by', 'approved_at', 'cancelled_by', 'cancelled_at', 'idempotency_key', 'request_fingerprint'];
 
     protected function casts(): array
     {
-        return ['status' => AppointmentStatus::class, 'starts_at' => 'datetime', 'ends_at' => 'datetime'];
-    }
-
-    /** @return BelongsTo<Clinic, $this> */
-    public function clinic(): BelongsTo
-    {
-        return $this->belongsTo(Clinic::class);
+        return [
+            'status' => AppointmentStatus::class,
+            'starts_at' => 'immutable_datetime',
+            'ends_at' => 'immutable_datetime',
+            'expires_at' => 'immutable_datetime',
+            'approved_at' => 'immutable_datetime',
+            'cancelled_at' => 'immutable_datetime',
+            'duration_minutes' => 'integer',
+        ];
     }
 
     /** @return BelongsTo<Patient, $this> */
@@ -46,27 +50,39 @@ class Appointment extends Model
         return $this->belongsTo(Patient::class);
     }
 
-    /** @return BelongsTo<Practitioner, $this> */
-    public function practitioner(): BelongsTo
+    /** @return BelongsTo<Doctor, $this> */
+    public function doctor(): BelongsTo
     {
-        return $this->belongsTo(Practitioner::class);
-    }
-
-    /** @return BelongsTo<Service, $this> */
-    public function service(): BelongsTo
-    {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(Doctor::class);
     }
 
     /** @return BelongsTo<User, $this> */
-    public function creator(): BelongsTo
+    public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
-    /** @return HasMany<AppointmentAudit, $this> */
-    public function audits(): HasMany
+    /** @return BelongsTo<User, $this> */
+    public function canceller(): BelongsTo
     {
-        return $this->hasMany(AppointmentAudit::class);
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /** @return HasMany<AppointmentEvent, $this> */
+    public function events(): HasMany
+    {
+        return $this->hasMany(AppointmentEvent::class);
+    }
+
+    /** @return HasMany<DoctorSlotReservation, $this> */
+    public function doctorSlotReservations(): HasMany
+    {
+        return $this->hasMany(DoctorSlotReservation::class);
+    }
+
+    /** @return HasMany<PatientSlotReservation, $this> */
+    public function patientSlotReservations(): HasMany
+    {
+        return $this->hasMany(PatientSlotReservation::class);
     }
 }

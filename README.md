@@ -1,44 +1,60 @@
 # klinika-web
 
-klinika-web is a production-oriented clinic appointment management system planned for Laravel, Livewire, Blade, Tailwind CSS, PostgreSQL, and Render.
+klinika-web is a production-oriented, single-clinic appointment scheduling and management application. Patients request appointments with doctors; receptionists review and manage those requests; administrators manage doctors, schedules, staff, and clinic policy.
 
-## Project status
+The authoritative product specification is [`projectplan.md`](projectplan.md). The documents under [`docs/`](docs/) are implementation-oriented summaries and must remain aligned with it.
 
-Phase 1 established the Laravel foundation. Scheduling and clinic-management features have not been implemented.
+## Current status
 
-The current foundation includes:
+The project has completed **Phase 8 UI polish and security hardening** for local development. Email notifications remain intentionally deferred. PostgreSQL-specific booking and transition concurrency verification remains an acceptance gate before production reliance.
 
-- Laravel 13 with the official Livewire 4 starter kit;
-- Fortify session authentication, registration, password reset, email verification, two-factor authentication, and passkeys;
-- fixed administrator, receptionist, practitioner, and patient roles;
-- PostgreSQL runtime configuration and Pest coverage for authentication and role authorization.
+- Phase 0 documentation: reconciled with the restored master PRD.
+- Phase 1 foundation: retained on the product-owner-approved Laravel 13 baseline; roles aligned to the master PRD.
+- Corrected Phase 2: implemented and verified locally on MariaDB.
+- Phase 3: implemented and verified locally on MariaDB.
+- Phase 4: implemented and verified locally on MariaDB; PostgreSQL concurrency CI remains pending.
+- Phase 5: implemented and verified with the local automated test configuration.
+- Phase 6: implemented and locally verified; PostgreSQL race tests are committed but pending execution.
+- Phase 7: scheduled pending expiry implemented and verified; notification delivery remains deferred.
+- Phase 8: implemented and locally verified.
+- Phase 9: not started; requires explicit approval and remains deployment scope.
+- Deployment: not started.
 
-Product scope remains provisional because `projectplan.md` is empty. See [the architecture](docs/ARCHITECTURE.md), [the provisional data model](docs/DATABASE.md), and [the delivery roadmap](docs/PHASES.md).
+Do not continue to another phase without product-owner approval.
 
-## Current stack detected
+## Approved target stack
 
-- PHP 8.4.5
-- Laravel 13.38.0
-- Livewire 4.4.8
-- Tailwind CSS 4.x
-- PostgreSQL 18 Windows service; PHP PostgreSQL extensions are enabled
-- Node.js 24.21.0 and npm 11.12.1
-- Pest 5.3.3
+- Laravel modular monolith
+- Blade, Livewire, Alpine.js, and Tailwind CSS
+- PostgreSQL as the production source of truth
+- Laravel session authentication, policies, notifications, scheduler, and database queue
+- Pest, Vite, Docker, Nginx/PHP-FPM, GitHub, and Render
+
+The master PRD names Laravel 12. The current lockfile installs Laravel 13 following the product owner's approval to proceed with the latest compatible version; this is a documented implementation deviation.
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and generate an application key.
-2. Create the PostgreSQL database named by `DB_DATABASE` and set local credentials.
-3. Run `composer install`, `npm install`, `php artisan migrate`, and `npm run build`.
-4. Start development with `composer run dev`.
+Prerequisites: PHP 8.3+, Composer, Node.js/npm, and a supported database.
 
-Do not commit `.env` or production secrets.
+```bash
+composer install
+copy .env.example .env
+php artisan key:generate
+npm install
+php artisan migrate
+npm run build
+php artisan serve
+```
 
-## Documentation
+The checked-in environment example targets PostgreSQL. The developer's current local environment may temporarily use MariaDB, but PostgreSQL-backed verification is mandatory for reservation constraints and concurrency behavior.
 
-- [Product requirements](docs/PRD.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Database design](docs/DATABASE.md)
-- [Business rules](docs/BUSINESS_RULES.md)
-- [Implementation phases](docs/PHASES.md)
+## Quality checks
 
+```bash
+vendor/bin/pint --format agent
+vendor/bin/phpstan analyse
+php artisan test --compact
+npm run build
+```
+
+See [`docs/PHASES.md`](docs/PHASES.md) for phase gates and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the target architecture and reconciliation boundary.

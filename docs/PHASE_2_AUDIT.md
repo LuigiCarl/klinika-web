@@ -1,5 +1,7 @@
 # Phase 2 Audit Report
 
+> Historical report: this audit covers a provisional multi-clinic implementation that conflicts with the restored master PRD. It is retained as execution evidence only and does not establish completion of the corrected Phase 2 defined in `projectplan.md` and `docs/PHASES.md`.
+
 Audit date: October 22, 2026  
 Scope: Phase 2 — Scheduling Configuration  
 Result: **Passed locally on MariaDB; PostgreSQL CI remains an external release gate**

@@ -3,6 +3,7 @@
 use App\Concerns\PasswordValidationRules;
 use App\Livewire\Actions\Logout;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 new class extends Component {
@@ -15,6 +16,12 @@ new class extends Component {
      */
     public function deleteUser(Logout $logout): void
     {
+        if (Auth::user()->patient()->exists()) {
+            throw ValidationException::withMessages([
+                'password' => 'Patient account closure requires assistance from the clinic.',
+            ]);
+        }
+
         $this->validate([
             'password' => $this->currentPasswordRules(),
         ]);

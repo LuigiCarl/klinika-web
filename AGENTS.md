@@ -3,14 +3,16 @@
 ## Product source of truth
 
 - Read `projectplan.md` and `docs/PRD.md` before product work.
-- As of Phase 0, `projectplan.md` is empty. Do not invent missing product requirements or present provisional decisions as approved.
-- Stop at the phase boundary requested by the user. Phase 1 is limited to the application foundation; do not implement Phase 2 scheduling features or deploy.
-- Laravel 13 is the approved framework major version. Confirm installed package versions before using version-specific APIs.
+- `projectplan.md` is the authoritative master PRD. If another document conflicts with it, stop and reconcile the conflict before implementation.
+- The product is a single-clinic system. Do not add multi-clinic tenancy, doctor login accounts, walk-in registration, medical records, payments, or in-place rescheduling unless the product owner approves a PRD change.
+- Stop at the phase boundary requested by the user. Phase 8 UI polish and security hardening is implemented and locally verified; email notification delivery remains deferred and PostgreSQL concurrency verification remains open. Do not begin Phase 9 until explicitly approved.
+- The master PRD specifies Laravel 12, while the repository currently runs Laravel 13 following an earlier approval to use the latest version. Treat Laravel 13 as a documented implementation deviation that requires final product-owner confirmation; confirm installed package versions before using version-specific APIs.
 
 ## Engineering direction
 
 - Keep klinika-web a Laravel monolith using Livewire and Blade unless an approved requirement proves another boundary is necessary.
 - PostgreSQL is the production source of truth. Booking correctness must be enforced in the database and inside transactions, not only in the UI.
+- MariaDB may be used temporarily for local development, but it cannot validate PostgreSQL-specific slot reservation and concurrency guarantees.
 - Treat patient and appointment data as sensitive. Apply least privilege, policies, server-side validation, auditability, secure secrets, and data-retention decisions.
 - Do not add packages or architectural layers without a concrete requirement and approval.
 - Add tests for business rules and concurrency behavior as implementation begins.

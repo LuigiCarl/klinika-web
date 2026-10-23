@@ -21,7 +21,9 @@ class RegistrationTest extends TestCase
     {
         $response = $this->get(route('register'));
 
-        $response->assertOk();
+        $response->assertOk()
+            ->assertSee('Create your patient account')
+            ->assertSee('Public registration is for patients only');
     }
 
     public function test_new_users_can_register(): void
@@ -37,5 +39,8 @@ class RegistrationTest extends TestCase
             ->assertRedirect(route('dashboard', absolute: false));
 
         $this->assertAuthenticated();
+        $this->assertDatabaseHas('patients', [
+            'user_id' => auth()->id(),
+        ]);
     }
 }

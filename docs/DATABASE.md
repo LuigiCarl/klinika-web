@@ -1,104 +1,68 @@
 # klinika-web Database Design
 
-## Phase 3 tables
+## Authority
 
-- `patients` belongs to a clinic and stores normalized contact fields for duplicate warnings.
-- `appointments` belongs to one clinic, patient, practitioner, and service. Composite foreign keys enforce clinic consistency.
-- `appointment_audits` records actor, action, timestamp, and limited before/after operational state without copying patient contact data.
-- Pending and confirmed intervals are serialized with practitioner/patient row locks. PostgreSQL additionally uses transaction advisory locks and partial GiST exclusion constraints for practitioner and patient overlaps.
+PostgreSQL is the production source of truth. MariaDB is a temporary local convenience only and cannot prove the required concurrency guarantees.
 
-## Status
+Implementation status: the corrected Phase 2 schema, models, factories, seed data, relationships, foreign keys, uniqueness rules, and portable check constraints are implemented and pass locally on MariaDB. PostgreSQL verification is still required.
 
-This is a provisional PostgreSQL design. Table names, fields, cardinality, and retention must be reconciled with the missing master PRD before migrations are created.
-
-## Design principles
-
-- PostgreSQL is authoritative in development, testing, and production to avoid SQLite/PostgreSQL behavior drift.
-- Use conventional plural table names and bigint primary keys unless an approved external/public identifier requirement calls for UUID/ULID identifiers.
-- Store timestamps in UTC and render them in the clinic's approved IANA timezone.
-- Use foreign keys, not-null constraints, check constraints, and unique indexes for invariants the database can enforce.
-- Prefer `restrict` deletion for referenced clinical/operational records. Use archival or status fields where history must remain.
-- Never use floating point for money; use integer minor units plus currency if billing is approved.
-- Add indexes for actual query shapes and verify them with representative data and query plans.
-
-## Proposed relationships
+## Target relationships
 
 ```text
-clinics 1---* clinic_user *---1 users
-clinics 1---* patients
-clinics 1---* services
-clinics 1---* practitioners
-users   0..1---1 practitioners
-practitioners *---* services (practitioner_service)
-practitioners 1---* availability_rules
-practitioners 1---* schedule_exceptions
-patients      1---* appointments
-practitioners 1---* appointments
-services      1---* appointments
-clinics       1---* appointments
-appointments  1---* appointment_status_histories
-users         1---* audit_logs (actor, nullable for system actions)
+users 1---0..1 patients
+specialties 1---* doctors
+doctors 1---* doctor_schedules
+doctors 1---* doctor_unavailabilities
+patients 1---* appointments *---1 doctors
+appointments 1---* doctor_slot_reservations
+appointments 1---* patient_slot_reservations
+appointments 1---* appointment_events
+users 0..1---* appointment_events (actor)
+users 0..1---* appointments (approver/canceller)
+clinic_settings (single-clinic policy row)
 ```
 
-If klinika-web is confirmed single-clinic, `clinics` and membership scoping may be removed rather than carrying speculative multi-tenancy.
+There is no `clinics` tenant table, clinic membership pivot, practitioner account, service catalog, or practitioner-service pivot in the approved MVP.
 
-## Proposed tables
+## Target tables
 
-| Table | Purpose and notable constraints |
+| Table | Required purpose and constraints |
 | --- | --- |
-| `users` | Authentication identity; unique normalized email; status and verification fields. |
-| `clinics` | Clinic identity, timezone, contact/configuration data. Include only if multi-clinic or future clinic separation is approved. |
-| `clinic_user` | Clinic membership and role; unique `(clinic_id, user_id)`; constrained role value. Implemented in Phase 2. |
-| `patients` | Clinic-scoped demographics and contact data; identifiers and uniqueness depend on approved duplicate rules. |
-| `practitioners` | Clinic-scoped practitioner profile, optionally linked to a user account. |
-| `services` | Clinic-scoped bookable service, duration, optional buffer, active flag. |
-| `practitioner_service` | Which practitioners provide which services; unique pair; optional duration override only if required. |
-| `availability_rules` | Recurring weekly availability with day, local start/end time, effective dates. |
-| `schedule_exceptions` | Dated closures or additional availability with interval and reason. |
-| `appointments` | Clinic, patient, practitioner, service, `[starts_at, ends_at)`, status, source, cancellation metadata, creator/updater, and optimistic metadata if required. |
-| `appointment_status_histories` | Append-only status transitions with actor, timestamp, and reason. |
-| `audit_logs` | Append-only record of sensitive changes; avoid duplicating unnecessary patient data. |
+| `users` | Authentication identity; unique email; role restricted to `patient`, `receptionist`, or `admin`; `is_active`; password fields. The starter's nullable `email_verified_at` column is retained but unused. |
+| `patients` | One-to-one patient profile through unique `user_id`; optional phone; each MVP patient has a user account. |
+| `specialties` | Unique name and active flag. |
+| `doctors` | Specialty, name, active flag, and duration restricted to 15/30/45/60 minutes; no login identity. |
+| `doctor_schedules` | Doctor, weekday, local start/end time, optional effective dates; supports multiple non-overlapping daily intervals. |
+| `doctor_unavailabilities` | Doctor, UTC start/end instants, and short operational reason. |
+| `appointments` | Patient, doctor, unique reference, UTC interval, immutable booked duration, controlled status, expiry/approval/cancellation attribution, idempotency key, and request fingerprint. |
+| `doctor_slot_reservations` | One row for each occupied 15-minute doctor slot; unique `(doctor_id, slot_starts_at)`. |
+| `patient_slot_reservations` | One row for each occupied 15-minute patient slot; unique `(patient_id, slot_starts_at)`. |
+| `appointment_events` | Append-only transition and action trail with optional actor/reason and restricted metadata. |
+| `clinic_settings` | Single-clinic timezone and configurable booking, review, expiry, cancellation, and no-show policies. |
 
-Rooms, equipment, payments, reminders, waitlists, clinical notes, and attachments are intentionally excluded until the PRD confirms them.
+Framework session, password-reset, cache, jobs, failed-jobs, and authentication-support tables may remain where required.
 
-## Appointment integrity
+## Integrity rules
 
-Represent appointment intervals as half-open ranges: a booking ending at 10:00 does not conflict with one starting at 10:00. Require `ends_at > starts_at`. Persist the actual start and end instants so later service-duration changes do not rewrite history.
+- Use foreign keys and restrictive deletion for historical or referenced operational records.
+- Require `ends_at > starts_at`, valid duration values, a valid status, and 15-minute-aligned booking starts.
+- Enforce unique `(patient_id, idempotency_key)` and unique appointment reference codes.
+- Ensure reservation rows reference the same doctor or patient as their appointment.
+- Index appointment queries by doctor/start, patient/start, status/start, and expiry as actual query plans require.
+- Pending and confirmed appointments own reservations. Rejection, expiry, and cancellation release them atomically; attendance transitions do not create a second booking interval.
+- Do not cascade-delete appointment or event history.
+- Keep appointment events append-only and separately audit doctor schedule and clinic-setting changes.
 
-For PostgreSQL, the preferred hard guarantee is an exclusion constraint on active appointments for the same practitioner:
+## Slot representation
 
-```sql
-EXCLUDE USING gist (
-    practitioner_id WITH =,
-    tstzrange(starts_at, ends_at, '[)') WITH &&
-)
-WHERE (status IN ('pending', 'confirmed'))
-```
+A 45-minute appointment beginning at 09:00 creates doctor and patient reservations at 09:00, 09:15, and 09:30. An appointment ending at 09:45 does not conflict with one starting at 09:45.
 
-This requires the `btree_gist` extension for equality on bigint identifiers. The exact blocking status set must be approved. If rooms or other exclusive resources are approved, add equivalent constraints for those resources rather than relying on application checks.
+The reservation unique indexes, not an availability query, are the final protection against simultaneous bookings. Booking must catch only the relevant PostgreSQL unique-violation case and return a conflict without exposing database details.
 
-Because PostgreSQL exclusion constraints cannot use a mutable application table as their predicate, status values used by the partial constraint must be stable database values. Status transitions and constraint changes require careful migrations.
+## Idempotency
 
-## Concurrency strategy
+The application creates a unique submission key for each booking attempt and stores a deterministic fingerprint of the authoritative request payload. Reusing the same key and fingerprint returns the original logical result; reusing the key with a different fingerprint is rejected. Idempotency checks occur under the booking transaction's lock protocol.
 
-Booking and rescheduling use a short database transaction. The operation should take a deterministic practitioner/day advisory transaction lock (or lock a dedicated schedule row), then re-check availability and persist. The exclusion constraint is the final race-proof safeguard. A constraint violation is translated into a friendly “slot no longer available” result.
+## Migration strategy from provisional code
 
-The application-level lock improves predictable behavior and coordinates related checks; it does not replace the exclusion constraint. Do not use cache locks as the only guard because a distributed cache outage, lease expiry, or configuration error must not permit double-booking. Keep network calls and notifications outside the transaction and dispatch them only after commit.
-
-Cancellation releases the protected interval only when its status leaves the approved blocking set. Rescheduling updates the same appointment in a transaction so the old interval is not released before the new interval is secured.
-
-## Index plan to validate
-
-- appointments by `(clinic_id, starts_at, id)` for calendar ranges;
-- appointments by `(practitioner_id, starts_at, id)` and `(patient_id, starts_at, id)`;
-- active practitioner/service and membership lookups;
-- schedule rules by practitioner and effective date;
-- status history by `(appointment_id, created_at, id)`;
-- audit logs by clinic, actor, auditable reference, and time according to approved screens and retention.
-
-Avoid redundant indexes; validate the final set against migrations and representative `EXPLAIN` plans.
-
-## Development database status
-
-Local development temporarily uses MariaDB 10.4 through Laravel's `mariadb` connection. PostgreSQL remains the CI and production target. Phase 2 uses portable foreign keys, unique indexes, and check constraints; PostgreSQL-backed CI must verify them before production release.
-
+The repository currently contains incompatible multi-clinic tables and migrations. Do not silently edit already-applied migrations or destructively drop local data during documentation reconciliation. Corrected Phase 2 must first inventory whether any non-demo data needs preservation, then create an explicit replacement/migration plan. Because the project is pre-release, a clean development-database rebuild may be the simplest option, but it requires product-owner approval before destructive execution.

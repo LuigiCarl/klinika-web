@@ -5,17 +5,36 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 Route::get('ready', ReadinessController::class)->name('readiness');
+Route::livewire('doctors', 'pages::doctors.index')->name('doctors.index');
+Route::livewire('doctors/{doctor}', 'pages::doctors.show')->name('doctors.show');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
     Route::view('admin', 'dashboard')
-        ->middleware('role:administrator')
+        ->middleware('role:admin')
         ->name('admin.dashboard');
 
-    Route::livewire('clinics', 'pages::clinics.index')->name('clinics.index');
-    Route::livewire('clinics/{clinic}/scheduling', 'pages::clinics.scheduling')->name('clinics.scheduling');
-    Route::livewire('clinics/{clinic}/appointments', 'pages::clinics.appointments')->name('clinics.appointments');
+    Route::livewire('admin/doctors', 'pages::admin.doctors')
+        ->middleware('role:admin')
+        ->name('admin.doctors');
+
+    Route::middleware('role:patient')->prefix('patient')->name('patient.')->group(function () {
+        Route::livewire('dashboard', 'pages::patient.dashboard')->name('dashboard');
+        Route::livewire('doctors/{doctor}/book', 'pages::patient.book')->name('book');
+        Route::livewire('appointments', 'pages::patient.appointments')->name('appointments.index');
+        Route::livewire('appointments/{appointment}', 'pages::patient.appointment')->name('appointments.show');
+        Route::livewire('appointments/{appointment}/confirmation', 'pages::patient.confirmation')->name('appointments.confirmation');
+    });
+
+    Route::middleware('role:receptionist')->prefix('receptionist')->name('receptionist.')->group(function () {
+        Route::livewire('dashboard', 'pages::receptionist.dashboard')->name('dashboard');
+        Route::livewire('pending', 'pages::receptionist.pending')->name('pending');
+        Route::livewire('appointments', 'pages::receptionist.appointments')->name('appointments.index');
+        Route::livewire('history', 'pages::receptionist.appointments')->name('history');
+        Route::livewire('calendar', 'pages::receptionist.calendar')->name('calendar');
+        Route::livewire('appointments/{appointment}', 'pages::receptionist.appointment')->name('appointments.show');
+    });
 });
 
 require __DIR__.'/settings.php';

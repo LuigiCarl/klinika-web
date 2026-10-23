@@ -31,6 +31,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => Role::Patient,
+            'is_active' => true,
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
@@ -48,10 +49,10 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function administrator(): static
+    public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => Role::Administrator,
+            'role' => Role::Admin,
         ]);
     }
 
@@ -59,13 +60,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => Role::Receptionist,
-        ]);
-    }
-
-    public function practitioner(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'role' => Role::Practitioner,
         ]);
     }
 

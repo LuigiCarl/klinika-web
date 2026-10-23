@@ -4,8 +4,7 @@ namespace App;
 
 enum Role: string
 {
-    case Administrator = 'administrator';
+    case Admin = 'admin';
     case Receptionist = 'receptionist';
-    case Practitioner = 'practitioner';
     case Patient = 'patient';
 }

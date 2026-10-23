@@ -6,7 +6,7 @@
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                <x-app-logo :sidebar="true" href="{{ auth()->user()->hasRole(App\Role::Patient) ? route('patient.dashboard') : route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
@@ -15,11 +15,24 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    @can('viewAny', App\Models\Clinic::class)
-                        <flux:sidebar.item icon="building-office-2" :href="route('clinics.index')" :current="request()->routeIs('clinics.*')" wire:navigate>
-                            {{ __('Clinics') }}
+                    @if (auth()->user()->hasRole(App\Role::Patient))
+                        <flux:sidebar.item icon="users" :href="route('doctors.index')" :current="request()->routeIs('doctors.*') || request()->routeIs('patient.book')" wire:navigate>
+                            {{ __('Browse doctors') }}
                         </flux:sidebar.item>
-                    @endcan
+                        <flux:sidebar.item icon="calendar-days" :href="route('patient.appointments.index')" :current="request()->routeIs('patient.appointments.*')" wire:navigate>
+                            {{ __('My appointments') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (auth()->user()->hasRole(App\Role::Admin))
+                        <flux:sidebar.item icon="users" :href="route('admin.doctors')" :current="request()->routeIs('admin.doctors')" wire:navigate>
+                            {{ __('Doctors & schedules') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (auth()->user()->hasRole(App\Role::Receptionist))
+                        <flux:sidebar.item icon="inbox" :href="route('receptionist.pending')" :current="request()->routeIs('receptionist.pending')" wire:navigate>{{ __('Pending requests') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="calendar-days" :href="route('receptionist.calendar')" :current="request()->routeIs('receptionist.calendar')" wire:navigate>{{ __('Calendar') }}</flux:sidebar.item>
+                        <flux:sidebar.item icon="magnifying-glass" :href="route('receptionist.appointments.index')" :current="request()->routeIs('receptionist.appointments.*') || request()->routeIs('receptionist.history')" wire:navigate>{{ __('Appointments & history') }}</flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 

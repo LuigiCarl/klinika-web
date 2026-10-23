@@ -39,6 +39,16 @@ Keep `DB_QUEUE_RETRY_AFTER=120`, which is longer than the 90-second worker timeo
 
 No application jobs are currently dispatched because notification and export work is deferred.
 
+## Appointment expiry scheduler
+
+Run the Laravel scheduler continuously in local development when expiry behavior is needed:
+
+```bash
+php artisan schedule:work
+```
+
+Production must invoke `php artisan schedule:run` every minute or run an equivalent dedicated scheduler process. The registered `appointments:expire` task runs every minute with single-server and overlap protection. It processes at most 1,000 due requests per run by default; an operator may run a bounded batch manually with `php artisan appointments:expire --limit=500`.
+
 ## PostgreSQL backup
 
 Use the database provider's managed backups when available. Before a release that changes schema or before a risky maintenance operation, also capture an on-demand logical backup from a trusted administrative environment:

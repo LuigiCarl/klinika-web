@@ -1,89 +1,108 @@
 # klinika-web Delivery Phases
 
+`projectplan.md` defines these phase boundaries. Stop after every phase and wait for explicit product-owner approval.
+
+## Current position
+
+**Phase 8 UI polish and security hardening is implemented and locally verified.** Email notifications remain deferred by product-owner direction, and dedicated PostgreSQL booking and transition race tests remain external acceptance gates.
+
+Phase 9 deployment has not started and requires explicit product-owner approval.
+
 ## Phase 0 — Repository and planning
 
-Status: approved and complete. Unresolved product requirements remain deferred to the phases that depend on them.
+Deliverables: repository/tooling audit; aligned README, agent instructions, PRD, architecture, database, business rules, and roadmap; risks and prerequisites.
 
-- Audit repository and development tooling.
-- Record confirmed requirements and unknowns.
-- Propose architecture, database relationships, booking concurrency, permissions, security, deployment needs, and phased delivery.
-- Make no feature, dependency, framework-initialization, or deployment changes.
-- Obtain approval for the decisions in the Phase 1 gate.
+Exit gate:
 
-## Phase 1 — Approved foundation
+- documentation matches the master PRD;
+- discrepancies in existing code are disclosed;
+- Laravel 12 versus installed Laravel 13 is decided;
+- no product feature is implemented as part of reconciliation.
 
-Status: conditionally complete after audit. Application checks and migrations pass against the temporary local MariaDB database, but Phase 1 is not cleared until PostgreSQL-backed CI is verified and the repository has a baseline commit. See `docs/PHASE_1_AUDIT.md`.
+## Phase 1 — Laravel foundation
 
-- Use the approved latest compatible framework version (Laravel 13).
-- Initialize from the official Laravel Livewire starter kit.
-- Establish a dedicated Git repository at the klinika-web root; the current Git root is the parent Desktop directory and klinika-web is wholly untracked.
-- Configure application identity and PostgreSQL for local/test environments.
-- Define environment examples without secrets.
-- Establish authentication approach, fixed roles, policies, and clinic scope.
-- Standardize Livewire component format and layout conventions.
-- Configure Pest, CI checks, Larastan, Pint, and frontend build checks.
-- Add only the minimum foundational migrations and factories approved for the first vertical slice.
+Scope: Laravel application, compatible Livewire starter, PostgreSQL configuration, session authentication, patient registration without email verification, password reset, fixed roles, active-account handling, baseline middleware/policies, factories, and authentication/authorization tests.
 
-Exit criteria: clean reproducible setup, approved dependency versions, PostgreSQL connection verified, authentication/security baseline tested, CI green, and no unresolved foundational decision.
+Current assessment: the installed Laravel 13/Livewire foundation, tooling, and much of authentication are reusable. The master calls for Laravel 12 and roles `patient`, `receptionist`, and `admin`; those must be reconciled. MariaDB success does not replace PostgreSQL verification.
 
-## Phase 2 — Scheduling configuration
+Exit gate: approved framework version, reproducible setup, aligned roles/authentication, relevant tests passing, PostgreSQL configuration verified, and no Phase 2 domain behavior mixed into the foundation acceptance.
 
-Status: implemented and locally verified against MariaDB. PostgreSQL-backed CI remains required before production release.
+## Phase 2 — Database and domain models
 
-- Implement clinics (if approved), practitioners, services, eligibility, availability, and schedule exceptions.
-- Add policies, validation, factories, feature tests, and database constraints.
-- Deliver administrative screens with accessibility and authorization checks.
+Status: implemented; local MariaDB migrations, constraints, relationships, factories, seeders, and automated tests pass. PostgreSQL-backed migration and constraint verification remains an exit gate.
 
-Exit criteria: authorized staff can configure a schedule and unauthorized actors cannot access or mutate it.
+Scope: users/patients, specialties, doctors, schedules, unavailability, appointments, doctor and patient slot reservations, appointment events, clinic settings, enums, factories, relationships, constraints, and model tests.
 
-## Phase 3 — Patient and appointment workflow
+Do not carry forward provisional `clinics`, clinic memberships, practitioner accounts, services, or rescheduling as approved concepts. Plan any destructive development-database rebuild separately.
 
-Status: implemented for local MariaDB verification. PostgreSQL exclusion-constraint and deterministic concurrency verification remain required through PostgreSQL-backed CI before Phase 3 is cleared for production.
+Exit gate: approved target schema migrates cleanly on PostgreSQL; relationships, constraints, role ownership, and factories are tested.
 
-- Implement patient directory and approved duplicate handling.
-- Implement availability search, booking, rescheduling, cancellation, and status transitions.
-- Add PostgreSQL exclusion constraints and transaction/advisory-lock behavior.
-- Add deterministic concurrency tests using PostgreSQL, not SQLite.
-- Implement calendar/list views and audit history.
+## Phase 3 — Doctor and schedule management
 
-Exit criteria: approved booking rules are enforced under concurrent attempts and are covered by feature and database integration tests.
+Status: implemented; admin authorization, specialties, doctor profiles and durations, weekly working intervals, break representation, unavailability, overlap validation, conflict protection, administrative audit records, Livewire UI, and feature tests pass locally on MariaDB.
 
-## Phase 4 — Notifications and operations
+Scope: admin management of specialties, doctor profiles, durations, weekly intervals, effective dates, unavailability, deactivation, affected-appointment preview, policies, audit records, and responsive Livewire screens.
 
-Status: the approved minimal operational baseline is implemented and locally verified. PostgreSQL-backed CI and production-provider decisions remain release gates.
+Exit gate: authorized admins can manage valid non-conflicting schedules; conflicting changes cannot silently invalidate bookings; unauthorized users cannot access or mutate management resources.
 
-Email and SMS notification work is deferred until the product owner explicitly restores it to scope. Existing authentication remains unchanged until separate login requirements are approved.
+## Phase 4 — Availability and booking engine
 
-- Email/SMS, reminders, operational reports, exports, and retention deletion are deferred.
-- Configure the database queue and failed-job storage for future durable work; no jobs are currently dispatched.
-- Add request correlation, structured container-log configuration, backup/restore runbooks, and liveness/readiness checks.
+Status: implemented and locally verified on MariaDB. The PostgreSQL-only simultaneous-booking test is committed but cannot run in the current local environment, so final PostgreSQL acceptance remains open.
 
-Exit criteria for the approved baseline: health checks are tested, queue failure storage and worker operations are documented, request logs are correlated without patient payloads, and backup restoration has a safe rehearsal procedure.
+Scope: availability calculation, configurable policy enforcement, idempotent pending appointment requests, 15-minute reservation rows, deterministic PostgreSQL locks, unique-conflict handling, stale expiry integration, and concurrency tests.
 
-## Phase 5 — Production readiness and Render release
+Exit gate: simultaneous attempts cannot double-book a doctor or patient, retry semantics are correct, PostgreSQL-backed concurrency tests pass, and every booking rule is covered.
 
-- Add reviewed Docker and Render configuration.
-- Provision same-region Render web, PostgreSQL, and worker/storage resources as approved.
-- Configure secrets, HTTPS/cookies, internal database URL, migrations, health checks, backups, and access restrictions.
-- Run full automated, security, performance, accessibility, concurrency, migration, and restore verification.
-- Conduct staging acceptance and a documented rollback/recovery exercise.
+## Phase 5 — Patient portal
 
-Exit criteria: product-owner acceptance, documented recovery evidence, production checklist approval, and controlled release. Deployment requires a separate explicit user instruction.
+Status: implemented and locally verified. Registration creates a patient profile atomically; public doctor pages, patient dashboard, availability/booking flow, confirmation, appointment history/details, cutoff-aware cancellation, profile phone updates, ownership policies, and responsive layouts are present.
 
-## Phase 1 decisions and remaining gates
+Scope: public doctor pages; patient dashboard; doctor browsing; booking; appointment lists/details; eligible cancellation; profile; ownership policies; accessible responsive UI.
 
-- [ ] Supply or restore the complete master PRD in `projectplan.md` or identify its authoritative location.
-- [x] Approve Laravel 13 as the latest compatible framework version.
-- [x] Replace the blank starter with the official authenticated Livewire starter foundation.
-- [x] Confirm multi-clinic scope with clinic-specific membership roles.
-- [x] Approve actors, permissions, appointment statuses, and transitions.
-- [x] Approve booking, availability, conflict, buffer, cancellation, and timezone rules for the Phase 3 baseline.
-- [x] Decide patient self-service and identity/duplicate rules for the Phase 3 baseline.
-- [ ] Decide whether clinical records, billing, uploads, reminders, reports, or integrations are in scope.
-- [ ] Identify privacy jurisdiction, retention, audit, consent, accessibility, and recovery targets.
-- [x] Approve MariaDB as the temporary local development database.
-- [ ] Restore PostgreSQL locally or verify all migrations and tests through PostgreSQL-backed CI before relying on PostgreSQL-specific behavior.
-- [ ] Confirm Render region/plan assumptions and object storage/queue providers when those features enter scope.
-- [x] Initialize a dedicated repository at the project root.
-- [ ] Create and push the Phase 1 baseline commit, then verify the PostgreSQL-backed CI workflow.
+Exit gate: authenticated active patients can complete the approved self-service flow without email verification and cannot access another patient's data.
 
+## Phase 6 — Receptionist workflows
+
+Status: implemented and locally verified. Receptionist dashboard, pending review, approval/rejection, daily calendar, appointment search/history, details, check-in, completion, no-show grace enforcement, staff cancellation with reason, centralized locked transitions, and audit events are present.
+
+Scope: pending queue, approval, rejection with reason, calendar/search, check-in, completion, no-show, late-cancellation exception, centralized transitions, and audit visibility appropriate to the role.
+
+Exit gate: the complete state machine is enforced under locks and authorization, with workflow tests for valid and invalid transitions.
+
+## Phase 7 — Automation and notifications
+
+Status: pending-expiry command, scheduling, bounded processing, overlap/single-server protection, failure isolation, reservation release, and audit events are implemented and locally verified. Email notification classes, delivery, and queue retry behavior remain intentionally deferred, so the original full notification exit gate is not claimed.
+
+Scope in the master: scheduled expiry and queued notifications for submission, approval, rejection, expiry, and cancellation, dispatched after commit with safe content and failure isolation.
+
+Product-owner override: email work is currently deferred. Do not implement notification delivery until explicitly restored to scope. Core scheduled expiry remains required when this phase is approved.
+
+## Phase 8 — UI polish and security hardening
+
+Status: implemented and locally verified. Critical actions expose loading, confirmation, and rate-limit feedback; inactive sessions are terminated; patient clinical history cannot be orphaned by self-deletion; baseline browser headers and encrypted sessions are configured; and security regression tests pass.
+
+Scope: consistent responsive UI, accessibility, loading/empty/error states, confirmation flows, rate limits, headers, production session settings, authorization review, sensitive-data/logging review, and security tests.
+
+Exit gate: security and accessibility findings are resolved or explicitly accepted with documented risk.
+
+## Phase 9 — Render deployment
+
+Scope: reviewed Docker/Nginx/PHP-FPM configuration; Render web, worker, scheduler, and PostgreSQL; secrets; migrations; health checks; backups; staging verification; rollback and recovery.
+
+Deployment remains out of scope until explicitly approved. Localhost functionality takes priority, and free-tier constraints must be assessed without weakening correctness or durability requirements.
+
+## Phase 10 — Final QA and release
+
+Scope: full automated suite, PostgreSQL concurrency verification, migration/recovery tests, security/privacy review, accessibility and performance checks, manual acceptance, documentation, operational handoff, and controlled release decision.
+
+Exit gate: every master definition-of-done item has evidence; unresolved risk is documented and accepted; production release is separately authorized.
+
+## Decisions and prerequisites before corrected Phase 2
+
+- [x] Retain Laravel 13 as the previously approved latest compatible foundation despite the master PRD naming Laravel 12.
+- [x] Align roles to `patient`, `receptionist`, and `admin`.
+- [x] Replace the provisional/demo MariaDB schema with the corrected single-clinic schema.
+- [ ] Provide PostgreSQL locally or rely on a reachable PostgreSQL CI environment for database-specific verification.
+- [x] Keep MariaDB temporarily for routine localhost development.
+- [x] Keep email delivery deferred until explicitly restored.
+- [ ] Define privacy jurisdiction, retention, anonymization/deletion, breach response, recovery targets, and authorization to use real patient data before a production pilot.

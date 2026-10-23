@@ -4,35 +4,29 @@ namespace Database\Factories;
 
 use App\AppointmentStatus;
 use App\Models\Appointment;
-use App\Models\Clinic;
+use App\Models\Doctor;
 use App\Models\Patient;
-use App\Models\Practitioner;
-use App\Models\Service;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
-/**
- * @extends Factory<Appointment>
- */
+/** @extends Factory<Appointment> */
 class AppointmentFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        $startsAt = now()->addDays(2)->startOfHour();
+
         return [
-            'clinic_id' => Clinic::factory(),
-            'patient_id' => fn (array $attributes) => Patient::factory()->create(['clinic_id' => $attributes['clinic_id']]),
-            'practitioner_id' => fn (array $attributes) => Practitioner::factory()->create(['clinic_id' => $attributes['clinic_id']]),
-            'service_id' => fn (array $attributes) => Service::factory()->create(['clinic_id' => $attributes['clinic_id']]),
-            'created_by' => User::factory(),
+            'patient_id' => Patient::factory(),
+            'doctor_id' => Doctor::factory(),
+            'reference_code' => 'APT-'.Str::upper(Str::random(12)),
+            'starts_at' => $startsAt,
+            'ends_at' => $startsAt->copy()->addMinutes(30),
+            'duration_minutes' => 30,
             'status' => AppointmentStatus::Pending,
-            'starts_at' => now()->addDay()->startOfHour(),
-            'ends_at' => now()->addDay()->startOfHour()->addMinutes(30),
+            'expires_at' => now()->addDay(),
             'idempotency_key' => fake()->uuid(),
+            'request_fingerprint' => hash('sha256', fake()->uuid()),
         ];
     }
 }

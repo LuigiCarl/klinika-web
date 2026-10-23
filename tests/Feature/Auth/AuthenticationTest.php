@@ -48,6 +48,30 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_inactive_users_can_not_authenticate(): void
+    {
+        $user = User::factory()->create(['is_active' => false]);
+
+        $response = $this->post(route('login.store'), [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrorsIn('email');
+        $this->assertGuest();
+    }
+
+    public function test_dashboard_renders_the_patient_portal_for_a_patient(): void
+    {
+        $user = User::factory()->create();
+        $user->patient()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Manage your appointment requests securely.');
+    }
+
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge(): void
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
