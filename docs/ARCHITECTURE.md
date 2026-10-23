@@ -62,6 +62,7 @@ No deployment artifacts are created in Phase 0. The proposed production topology
 - a separate Render background worker if durable queues are approved;
 - an external object store for uploads, unless the single-instance and downtime limitations of a persistent disk are consciously accepted;
 - a lightweight HTTP health endpoint that does not expose secrets and returns within Render's timeout;
+- separate `/up` liveness and `/ready` database/queue readiness endpoints;
 - a release/pre-deploy migration step using `php artisan migrate --force`, separated from normal request startup where the chosen Render workflow permits it.
 
 Required production configuration includes `APP_ENV=production`, `APP_DEBUG=false`, a generated `APP_KEY`, canonical `APP_URL`, `DB_CONNECTION=pgsql`, Render's database URL, secure session settings, mail/queue/storage credentials when applicable, and production logging. Cache configuration, routes, views, and optimized autoloading should be built for production. The service must listen on Render's assigned port through the container/web-server configuration.

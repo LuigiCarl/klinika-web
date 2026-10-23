@@ -8,6 +8,8 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -54,6 +56,29 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function hasRole(Role ...$roles): bool
     {
         return in_array($this->role, $roles, true);
+    }
+
+    /** @return BelongsToMany<Clinic, $this> */
+    public function clinics(): BelongsToMany
+    {
+        return $this->belongsToMany(Clinic::class)->withPivot('role')->withTimestamps();
+    }
+
+    public function hasClinicRole(Clinic $clinic, Role ...$roles): bool
+    {
+        return $this->clinics()
+            ->whereKey($clinic->getKey())
+            ->wherePivotIn('role', array_map(
+                static fn (Role $role): string => $role->value,
+                $roles,
+            ))
+            ->exists();
+    }
+
+    /** @return HasMany<Practitioner, $this> */
+    public function practitionerProfiles(): HasMany
+    {
+        return $this->hasMany(Practitioner::class);
     }
 
     /**

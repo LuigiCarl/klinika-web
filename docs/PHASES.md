@@ -28,6 +28,8 @@ Exit criteria: clean reproducible setup, approved dependency versions, PostgreSQ
 
 ## Phase 2 — Scheduling configuration
 
+Status: implemented and locally verified against MariaDB. PostgreSQL-backed CI remains required before production release.
+
 - Implement clinics (if approved), practitioners, services, eligibility, availability, and schedule exceptions.
 - Add policies, validation, factories, feature tests, and database constraints.
 - Deliver administrative screens with accessibility and authorization checks.
@@ -35,6 +37,8 @@ Exit criteria: clean reproducible setup, approved dependency versions, PostgreSQ
 Exit criteria: authorized staff can configure a schedule and unauthorized actors cannot access or mutate it.
 
 ## Phase 3 — Patient and appointment workflow
+
+Status: implemented for local MariaDB verification. PostgreSQL exclusion-constraint and deterministic concurrency verification remain required through PostgreSQL-backed CI before Phase 3 is cleared for production.
 
 - Implement patient directory and approved duplicate handling.
 - Implement availability search, booking, rescheduling, cancellation, and status transitions.
@@ -46,11 +50,15 @@ Exit criteria: approved booking rules are enforced under concurrent attempts and
 
 ## Phase 4 — Notifications and operations
 
-- Add approved email/SMS channels, templates, consent, retries, and queue worker.
-- Add reminders, operational reports, exports, and retention controls that are explicitly in scope.
-- Add observability, structured logs, failure alerts, backup/restore runbooks, and health/readiness checks.
+Status: the approved minimal operational baseline is implemented and locally verified. PostgreSQL-backed CI and production-provider decisions remain release gates.
 
-Exit criteria: failed jobs are observable/recoverable, sensitive data is not leaked, and operational requirements are tested.
+Email and SMS notification work is deferred until the product owner explicitly restores it to scope. Existing authentication remains unchanged until separate login requirements are approved.
+
+- Email/SMS, reminders, operational reports, exports, and retention deletion are deferred.
+- Configure the database queue and failed-job storage for future durable work; no jobs are currently dispatched.
+- Add request correlation, structured container-log configuration, backup/restore runbooks, and liveness/readiness checks.
+
+Exit criteria for the approved baseline: health checks are tested, queue failure storage and worker operations are documented, request logs are correlated without patient payloads, and backup restoration has a safe rehearsal procedure.
 
 ## Phase 5 — Production readiness and Render release
 
@@ -67,10 +75,10 @@ Exit criteria: product-owner acceptance, documented recovery evidence, productio
 - [ ] Supply or restore the complete master PRD in `projectplan.md` or identify its authoritative location.
 - [x] Approve Laravel 13 as the latest compatible framework version.
 - [x] Replace the blank starter with the official authenticated Livewire starter foundation.
-- [ ] Confirm single-clinic versus multi-clinic scope.
-- [ ] Approve actors, permissions, appointment statuses, and transitions.
-- [ ] Approve booking, availability, conflict, buffer, cancellation, and timezone rules.
-- [ ] Decide patient self-service and identity/duplicate rules.
+- [x] Confirm multi-clinic scope with clinic-specific membership roles.
+- [x] Approve actors, permissions, appointment statuses, and transitions.
+- [x] Approve booking, availability, conflict, buffer, cancellation, and timezone rules for the Phase 3 baseline.
+- [x] Decide patient self-service and identity/duplicate rules for the Phase 3 baseline.
 - [ ] Decide whether clinical records, billing, uploads, reminders, reports, or integrations are in scope.
 - [ ] Identify privacy jurisdiction, retention, audit, consent, accessibility, and recovery targets.
 - [x] Approve MariaDB as the temporary local development database.

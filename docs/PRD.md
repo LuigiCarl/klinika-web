@@ -8,8 +8,12 @@ This is a Phase 0 requirements record, not the complete approved master PRD. The
 
 - Product name: klinika-web.
 - Product category: production-oriented clinic appointment management system.
+- The application supports multiple clinics with clinic-scoped memberships and roles.
 - Intended stack: the latest compatible Laravel release (currently Laravel 13), Livewire, Blade, Tailwind CSS, PostgreSQL, and Render.
 - Laravel conventions and security and database-integrity controls are required.
+- Phase 3 is staff-operated: administrators and receptionists manage patients and appointments; practitioners have read-only access to their own schedule; patient self-service is excluded.
+- Appointment starts use 15-minute intervals, duration comes from the service, overbooking is prohibited, and both practitioner and patient overlaps are blocked.
+- Approved statuses are Pending, Confirmed, Completed, Cancelled, and NoShow using the transitions recorded in `docs/BUSINESS_RULES.md`.
 - Architecture should remain simple and maintainable, without unnecessary packages or abstractions.
 - Phase 0 is documentation and planning only. Feature implementation, Laravel initialization, and deployment are excluded.
 
@@ -19,7 +23,6 @@ The smallest coherent first release would allow authorized clinic staff to manag
 
 The following are not approved because the master PRD is unavailable:
 
-- whether this is single-clinic or multi-clinic;
 - whether patients can self-register or self-book;
 - whether appointments require staff confirmation;
 - exact appointment statuses and allowed transitions;

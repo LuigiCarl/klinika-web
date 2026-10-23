@@ -2,6 +2,8 @@
 
 ## Status
 
+Approved clarifications: klinika-web is multi-clinic, authorization roles are scoped per clinic membership, and the Phase 3 baseline below was approved on October 23, 2026.
+
 The master PRD is unavailable because `projectplan.md` is empty. The rules below are safe proposed defaults, not approved product requirements. Every item marked “decision required” must be confirmed before its feature is implemented.
 
 ## Booking invariants
@@ -17,7 +19,7 @@ The master PRD is unavailable because `projectplan.md` is empty. The rules below
 - Status changes and cancellations retain historical attribution; operational records are not silently deleted.
 - Notifications occur only after the transaction commits and never determine booking success.
 
-Decisions required: slot granularity, minimum notice, maximum advance window, service duration source, buffers, overbooking, walk-ins, approval flow, reschedule/cancellation cutoff, no-show handling, recurring appointments, and whether patient conflicts also block bookings.
+Approved Phase 3 baseline: 15-minute slots; service duration controls appointment length; no overbooking; practitioner and patient overlaps are blocked; no buffers, minimum notice, maximum advance window, or cancellation cutoff; staff-created appointments begin pending; patient self-service is excluded. Walk-ins and recurring appointments remain out of scope.
 
 ## Proposed appointment state model
 
@@ -31,7 +33,7 @@ Candidate statuses are `Pending`, `Confirmed`, `Completed`, `Cancelled`, and `No
 | Cancelled | None through normal UI |
 | NoShow | None through normal UI |
 
-Whether `Pending` is needed, which statuses block time, and whether administrators may correct terminal states are decisions required from the PRD owner.
+`Pending` and `Confirmed` block time. Terminal states cannot be changed through the normal workflow.
 
 ## Proposed permissions
 

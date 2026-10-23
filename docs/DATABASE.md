@@ -1,5 +1,12 @@
 # klinika-web Database Design
 
+## Phase 3 tables
+
+- `patients` belongs to a clinic and stores normalized contact fields for duplicate warnings.
+- `appointments` belongs to one clinic, patient, practitioner, and service. Composite foreign keys enforce clinic consistency.
+- `appointment_audits` records actor, action, timestamp, and limited before/after operational state without copying patient contact data.
+- Pending and confirmed intervals are serialized with practitioner/patient row locks. PostgreSQL additionally uses transaction advisory locks and partial GiST exclusion constraints for practitioner and patient overlaps.
+
 ## Status
 
 This is a provisional PostgreSQL design. Table names, fields, cardinality, and retention must be reconciled with the missing master PRD before migrations are created.
@@ -41,7 +48,7 @@ If klinika-web is confirmed single-clinic, `clinics` and membership scoping may 
 | --- | --- |
 | `users` | Authentication identity; unique normalized email; status and verification fields. |
 | `clinics` | Clinic identity, timezone, contact/configuration data. Include only if multi-clinic or future clinic separation is approved. |
-| `clinic_user` | Clinic membership and role; unique `(clinic_id, user_id)`; constrained role value. |
+| `clinic_user` | Clinic membership and role; unique `(clinic_id, user_id)`; constrained role value. Implemented in Phase 2. |
 | `patients` | Clinic-scoped demographics and contact data; identifiers and uniqueness depend on approved duplicate rules. |
 | `practitioners` | Clinic-scoped practitioner profile, optionally linked to a user account. |
 | `services` | Clinic-scoped bookable service, duration, optional buffer, active flag. |
@@ -91,7 +98,7 @@ Cancellation releases the protected interval only when its status leaves the app
 
 Avoid redundant indexes; validate the final set against migrations and representative `EXPLAIN` plans.
 
-## PostgreSQL environment findings
+## Development database status
 
-The local machine has a running PostgreSQL 18 Windows service and PHP has `pdo_pgsql`/`pgsql` enabled. The PostgreSQL client is installed under `C:\Program Files\PostgreSQL\18\bin` but is not on `PATH`. The application now defaults to the `pgsql` connection and the `klinika_web` database. The server is reachable and requires a password for the `postgres` user; migrations cannot be verified locally until valid credentials are supplied.
+Local development temporarily uses MariaDB 10.4 through Laravel's `mariadb` connection. PostgreSQL remains the CI and production target. Phase 2 uses portable foreign keys, unique indexes, and check constraints; PostgreSQL-backed CI must verify them before production release.
 
