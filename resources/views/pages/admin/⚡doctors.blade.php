@@ -80,6 +80,7 @@ new #[Title('Doctor management')] class extends Component {
         Gate::authorize('update', $specialty);
 
         if ($specialty->is_active && $specialty->doctors()->where('is_active', true)->exists()) {
+            Flux::toast(variant: 'danger', text: __('Deactivate doctors in this specialty first.'));
             throw ValidationException::withMessages(['specialty' => 'Deactivate doctors in this specialty first.']);
         }
 
@@ -87,6 +88,10 @@ new #[Title('Doctor management')] class extends Component {
         $specialty->update(['is_active' => ! $specialty->is_active]);
         $this->audit($specialty, $specialty->is_active ? 'activated' : 'deactivated', $before, $specialty->getAttributes());
         unset($this->specialties);
+        Flux::toast(
+            variant: 'success',
+            text: $specialty->fresh()->is_active ? __('Specialty activated.') : __('Specialty deactivated.')
+        );
     }
 
     public function createDoctor(): void
@@ -123,6 +128,15 @@ new #[Title('Doctor management')] class extends Component {
         $this->editDoctorName = $doctor->name;
         $this->editSpecialtyId = (string) $doctor->specialty_id;
         $this->editDurationMinutes = (string) $doctor->appointment_duration_minutes;
+
+        $this->modal('edit-doctor-modal')->show();
+    }
+
+    public function cancelEditDoctor(): void
+    {
+        $this->reset('editingDoctorId', 'editDoctorName', 'editSpecialtyId');
+        $this->editDurationMinutes = '30';
+        $this->modal('edit-doctor-modal')->close();
     }
 
     public function updateDoctor(): void
@@ -144,6 +158,7 @@ new #[Title('Doctor management')] class extends Component {
         $this->reset('editingDoctorId', 'editDoctorName', 'editSpecialtyId');
         $this->editDurationMinutes = '30';
         unset($this->doctors);
+        $this->modal('edit-doctor-modal')->close();
         Flux::toast(variant: 'success', text: __('Doctor updated. Existing appointment durations were preserved.'));
     }
 
@@ -151,8 +166,19 @@ new #[Title('Doctor management')] class extends Component {
     {
         $doctor = Doctor::query()->findOrFail($doctorId);
         Gate::authorize('update', $doctor);
-        $service->setDoctorActive($doctor, ! $doctor->is_active, Auth::user());
-        unset($this->doctors);
+
+        try {
+            $service->setDoctorActive($doctor, ! $doctor->is_active, Auth::user());
+            unset($this->doctors);
+            Flux::toast(
+                variant: 'success',
+                text: $doctor->fresh()->is_active ? __('Doctor activated.') : __('Doctor deactivated.')
+            );
+        } catch (ValidationException $e) {
+            $message = $e->validator->errors()->first('doctor') ?? $e->getMessage();
+            Flux::toast(variant: 'danger', text: $message);
+            throw $e;
+        }
     }
 
     public function createSchedule(DoctorScheduleService $service): void
@@ -168,27 +194,42 @@ new #[Title('Doctor management')] class extends Component {
         $doctor = Doctor::query()->findOrFail($validated['scheduleDoctorId']);
         Gate::authorize('update', $doctor);
 
-        $service->createSchedule($doctor, [
-            'weekday' => (int) $validated['weekday'],
-            'start_time' => $validated['startTime'],
-            'end_time' => $validated['endTime'],
-            'effective_from' => $validated['effectiveFrom'] ?: null,
-            'effective_until' => $validated['effectiveUntil'] ?: null,
-        ], Auth::user());
+        try {
+            $service->createSchedule($doctor, [
+                'weekday' => (int) $validated['weekday'],
+                'start_time' => $validated['startTime'],
+                'end_time' => $validated['endTime'],
+                'effective_from' => $validated['effectiveFrom'] ?: null,
+                'effective_until' => $validated['effectiveUntil'] ?: null,
+            ], Auth::user());
 
-        $this->reset('scheduleDoctorId', 'effectiveFrom', 'effectiveUntil');
-        $this->weekday = '1';
-        $this->startTime = '09:00';
-        $this->endTime = '17:00';
-        unset($this->doctors);
+            $this->reset('scheduleDoctorId', 'effectiveFrom', 'effectiveUntil');
+            $this->weekday = '1';
+            $this->startTime = '09:00';
+            $this->endTime = '17:00';
+            unset($this->doctors);
+            Flux::toast(variant: 'success', text: __('Working interval added.'));
+        } catch (ValidationException $e) {
+            $message = $e->validator->errors()->first('schedule') ?? $e->getMessage();
+            Flux::toast(variant: 'danger', text: $message);
+            throw $e;
+        }
     }
 
     public function deleteSchedule(int $scheduleId, DoctorScheduleService $service): void
     {
         $schedule = DoctorSchedule::query()->with('doctor')->findOrFail($scheduleId);
         Gate::authorize('update', $schedule->doctor);
-        $service->deleteSchedule($schedule, Auth::user());
-        unset($this->doctors);
+
+        try {
+            $service->deleteSchedule($schedule, Auth::user());
+            unset($this->doctors);
+            Flux::toast(variant: 'success', text: __('Working interval removed.'));
+        } catch (ValidationException $e) {
+            $message = $e->validator->errors()->first('schedule') ?? $e->getMessage();
+            Flux::toast(variant: 'danger', text: $message);
+            throw $e;
+        }
     }
 
     public function createUnavailability(DoctorScheduleService $service): void
@@ -202,14 +243,21 @@ new #[Title('Doctor management')] class extends Component {
         $doctor = Doctor::query()->findOrFail($validated['unavailabilityDoctorId']);
         Gate::authorize('update', $doctor);
 
-        $service->createUnavailability($doctor, [
-            'starts_at' => $validated['unavailableStartsAt'],
-            'ends_at' => $validated['unavailableEndsAt'],
-            'reason' => $validated['unavailabilityReason'],
-        ], Auth::user());
+        try {
+            $service->createUnavailability($doctor, [
+                'starts_at' => $validated['unavailableStartsAt'],
+                'ends_at' => $validated['unavailableEndsAt'],
+                'reason' => $validated['unavailabilityReason'],
+            ], Auth::user());
 
-        $this->reset('unavailabilityDoctorId', 'unavailableStartsAt', 'unavailableEndsAt', 'unavailabilityReason');
-        unset($this->doctors);
+            $this->reset('unavailabilityDoctorId', 'unavailableStartsAt', 'unavailableEndsAt', 'unavailabilityReason');
+            unset($this->doctors);
+            Flux::toast(variant: 'success', text: __('Unavailability recorded.'));
+        } catch (ValidationException $e) {
+            $message = $e->validator->errors()->first('unavailability') ?? $e->getMessage();
+            Flux::toast(variant: 'danger', text: $message);
+            throw $e;
+        }
     }
 
     public function deleteUnavailability(int $unavailabilityId, DoctorScheduleService $service): void
@@ -218,6 +266,7 @@ new #[Title('Doctor management')] class extends Component {
         Gate::authorize('update', $unavailability->doctor);
         $service->deleteUnavailability($unavailability, Auth::user());
         unset($this->doctors);
+        Flux::toast(variant: 'success', text: __('Unavailability removed.'));
     }
 
     /** @param array<string, mixed>|null $before @param array<string, mixed>|null $after */
@@ -243,6 +292,7 @@ new #[Title('Doctor management')] class extends Component {
     <div class="grid gap-6 xl:grid-cols-2">
         <section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('Specialties') }}</flux:heading>
+            <flux:error name="specialty" class="mt-2" />
             <form wire:submit="createSpecialty" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                 <flux:input wire:model="specialtyName" :label="__('Specialty name')" required />
                 <flux:button type="submit" variant="primary" wire:loading.attr="disabled">{{ __('Add specialty') }}</flux:button>
@@ -281,20 +331,51 @@ new #[Title('Doctor management')] class extends Component {
 
     <section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:heading size="lg">{{ __('Doctor directory') }}</flux:heading>
-        @if ($editingDoctorId !== null)
-            <form wire:submit="updateDoctor" class="mt-4 grid gap-3 rounded-xl bg-zinc-50 p-4 sm:grid-cols-2 dark:bg-zinc-800">
+        <flux:error name="doctor" class="mt-2" />
+
+        <flux:modal name="edit-doctor-modal" class="min-w-[22rem] max-w-lg space-y-6">
+            <div>
+                <flux:heading size="lg">{{ __('Edit doctor') }}</flux:heading>
+                <flux:subheading class="mt-1">{{ __('Update doctor details and consultation duration.') }}</flux:subheading>
+            </div>
+
+            <form wire:submit="updateDoctor" class="space-y-4">
                 <flux:input wire:model="editDoctorName" :label="__('Doctor name')" required />
-                <flux:select wire:model="editSpecialtyId" :label="__('Specialty')" required>@foreach ($this->specialties->where('is_active', true) as $specialty)<flux:select.option wire:key="edit-specialty-{{ $specialty->id }}" :value="$specialty->id">{{ $specialty->name }}</flux:select.option>@endforeach</flux:select>
-                <flux:select wire:model="editDurationMinutes" :label="__('Consultation duration')" required>@foreach ([15, 30, 45, 60] as $duration)<flux:select.option wire:key="edit-duration-{{ $duration }}" :value="$duration">{{ $duration }} {{ __('minutes') }}</flux:select.option>@endforeach</flux:select>
-                <flux:button type="submit" variant="primary" class="sm:self-end" wire:loading.attr="disabled">{{ __('Save doctor') }}</flux:button>
+                <flux:select wire:model="editSpecialtyId" :label="__('Specialty')" required>
+                    @foreach ($this->specialties->where('is_active', true) as $specialty)
+                        <flux:select.option wire:key="edit-specialty-{{ $specialty->id }}" :value="$specialty->id">{{ $specialty->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:select wire:model="editDurationMinutes" :label="__('Consultation duration')" required>
+                    @foreach ([15, 30, 45, 60] as $duration)
+                        <flux:select.option wire:key="edit-duration-{{ $duration }}" :value="$duration">{{ $duration }} {{ __('minutes') }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <flux:button type="button" variant="filled" wire:click="cancelEditDoctor">{{ __('Cancel') }}</flux:button>
+                    <flux:button type="submit" variant="primary" wire:loading.attr="disabled">{{ __('Save changes') }}</flux:button>
+                </div>
             </form>
-        @endif
+        </flux:modal>
+
         <div class="mt-4 grid gap-4 lg:grid-cols-2">
             @forelse ($this->doctors as $doctor)
                 <article wire:key="doctor-{{ $doctor->id }}" class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                     <div class="flex items-start justify-between gap-3">
-                        <div><h3 class="font-semibold">{{ $doctor->name }}</h3><p class="text-sm text-zinc-500">{{ $doctor->specialty->name }} · {{ $doctor->appointment_duration_minutes }}m</p></div>
-                        <div class="flex gap-2"><flux:button size="sm" wire:click="editDoctor({{ $doctor->id }})">{{ __('Edit') }}</flux:button><flux:button size="sm" wire:click="toggleDoctor({{ $doctor->id }})" wire:loading.attr="disabled">{{ $doctor->is_active ? __('Deactivate') : __('Activate') }}</flux:button></div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-semibold">{{ $doctor->name }}</h3>
+                                @if (! $doctor->is_active)
+                                    <flux:badge size="sm" color="zinc">{{ __('Inactive') }}</flux:badge>
+                                @endif
+                            </div>
+                            <p class="text-sm text-zinc-500">{{ $doctor->specialty->name }} · {{ $doctor->appointment_duration_minutes }}m</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <flux:button size="sm" wire:click="editDoctor({{ $doctor->id }})">{{ __('Edit') }}</flux:button>
+                            <flux:button size="sm" wire:click="toggleDoctor({{ $doctor->id }})" wire:loading.attr="disabled">{{ $doctor->is_active ? __('Deactivate') : __('Activate') }}</flux:button>
+                        </div>
                     </div>
                     <div class="mt-4">
                         <div class="text-sm font-medium">{{ __('Working intervals') }}</div>
@@ -333,6 +414,7 @@ new #[Title('Doctor management')] class extends Component {
         <section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('Add working interval') }}</flux:heading>
             <flux:text class="mt-1">{{ __('Create separate morning and afternoon intervals to represent a lunch break.') }}</flux:text>
+            <flux:error name="schedule" class="mt-2" />
             <form wire:submit="createSchedule" class="mt-4 grid gap-3 sm:grid-cols-2">
                 <flux:select wire:model="scheduleDoctorId" :label="__('Doctor')" required><flux:select.option value="">{{ __('Select doctor') }}</flux:select.option>@foreach ($this->doctors as $doctor)<flux:select.option wire:key="schedule-doctor-{{ $doctor->id }}" :value="$doctor->id">{{ $doctor->name }}</flux:select.option>@endforeach</flux:select>
                 <flux:select wire:model="weekday" :label="__('Weekday')" required>@foreach ([1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'] as $value => $label)<flux:select.option wire:key="weekday-{{ $value }}" :value="$value">{{ __($label) }}</flux:select.option>@endforeach</flux:select>
@@ -346,6 +428,7 @@ new #[Title('Doctor management')] class extends Component {
 
         <section class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('Add unavailability') }}</flux:heading>
+            <flux:error name="unavailability" class="mt-2" />
             <form wire:submit="createUnavailability" class="mt-4 grid gap-3 sm:grid-cols-2">
                 <flux:select wire:model="unavailabilityDoctorId" :label="__('Doctor')" required><flux:select.option value="">{{ __('Select doctor') }}</flux:select.option>@foreach ($this->doctors as $doctor)<flux:select.option wire:key="unavailable-doctor-{{ $doctor->id }}" :value="$doctor->id">{{ $doctor->name }}</flux:select.option>@endforeach</flux:select>
                 <flux:input wire:model="unavailabilityReason" :label="__('Reason')" required />

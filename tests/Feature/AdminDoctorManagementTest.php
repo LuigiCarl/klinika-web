@@ -1,5 +1,6 @@
 <?php
 
+use App\AppointmentStatus;
 use App\Models\AdministrativeAudit;
 use App\Models\Appointment;
 use App\Models\Doctor;
@@ -93,4 +94,55 @@ it('updates a doctor profile without changing existing appointment duration', fu
         ->and($doctor->appointment_duration_minutes)->toBe(45)
         ->and($appointment->refresh()->duration_minutes)->toBe(30)
         ->and(AdministrativeAudit::query()->where('action', 'updated')->exists())->toBeTrue();
+});
+
+it('prevents deactivating a doctor with future appointments and permits deactivation when clear', function () {
+    $admin = User::factory()->admin()->create();
+    $specialty = Specialty::factory()->create();
+    $doctor = Doctor::factory()->for($specialty)->create(['is_active' => true]);
+
+    // Create an upcoming confirmed appointment for this doctor
+    $appointment = Appointment::factory()->for($doctor)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->addDays(2),
+        'ends_at' => now()->addDays(2)->addMinutes(30),
+    ]);
+
+    // Attempting to deactivate should fail with validation exception on 'doctor'
+    Livewire::actingAs($admin)->test('pages::admin.doctors')
+        ->call('toggleDoctor', $doctor->id)
+        ->assertHasErrors(['doctor']);
+
+    expect($doctor->refresh()->is_active)->toBeTrue();
+
+    // Remove the blocking appointment
+    $appointment->delete();
+
+    // Now deactivation succeeds
+    Livewire::actingAs($admin)->test('pages::admin.doctors')
+        ->call('toggleDoctor', $doctor->id)
+        ->assertHasNoErrors();
+
+    expect($doctor->refresh()->is_active)->toBeFalse();
+
+    // Re-activating also succeeds
+    Livewire::actingAs($admin)->test('pages::admin.doctors')
+        ->call('toggleDoctor', $doctor->id)
+        ->assertHasNoErrors();
+
+    expect($doctor->refresh()->is_active)->toBeTrue();
+});
+
+it('resets edit state when cancelling doctor editing', function () {
+    $admin = User::factory()->admin()->create();
+    $specialty = Specialty::factory()->create();
+    $doctor = Doctor::factory()->for($specialty)->create(['name' => 'Dr. First']);
+
+    Livewire::actingAs($admin)->test('pages::admin.doctors')
+        ->call('editDoctor', $doctor->id)
+        ->assertSet('editingDoctorId', $doctor->id)
+        ->assertSet('editDoctorName', 'Dr. First')
+        ->call('cancelEditDoctor')
+        ->assertSet('editingDoctorId', null)
+        ->assertSet('editDoctorName', '');
 });
