@@ -22,11 +22,11 @@ services:
       - key: DB_URL
         fromDatabase:
           name: klinika-postgres
-          property: connectionString
+          property: internalConnectionString
       - key: DATABASE_URL
         fromDatabase:
           name: klinika-postgres
-          property: connectionString
+          property: internalConnectionString
       - key: SESSION_DRIVER
         value: database
       - key: SESSION_SECURE_COOKIE
@@ -38,7 +38,7 @@ services:
       - key: RUN_MIGRATIONS
         value: true
       - key: RUN_SEEDER
-        value: false
+        value: true
 
   # Background Queue Worker and Scheduled Task Runner (Optional / Starter tier)
   - type: worker
@@ -66,11 +66,11 @@ services:
       - key: DB_URL
         fromDatabase:
           name: klinika-postgres
-          property: connectionString
+          property: internalConnectionString
       - key: DATABASE_URL
         fromDatabase:
           name: klinika-postgres
-          property: connectionString
+          property: internalConnectionString
       - key: QUEUE_CONNECTION
         value: database
       - key: CACHE_STORE
