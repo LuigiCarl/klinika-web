@@ -1,16 +1,18 @@
-# Stage 1: Build frontend assets
+# Stage 1: Install Composer dependencies
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+# Stage 2: Build frontend assets
 FROM node:22-alpine AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# Copy vendor from Composer stage so Vite/Tailwind can resolve Flux CSS and blade sources
+COPY --from=vendor /app/vendor ./vendor
 RUN npm run build
-
-# Stage 2: Install Composer dependencies
-FROM composer:2 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Stage 3: Production runtime
 FROM php:8.4-fpm-alpine AS production
