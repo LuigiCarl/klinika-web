@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+export LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
+
 PORT="${PORT:-10000}"
 echo "Configuring Nginx to listen on port ${PORT}..."
 sed -i "s/PORT_PLACEHOLDER/${PORT}/g" /etc/nginx/http.d/default.conf
@@ -34,14 +36,14 @@ if [ -n "${DB_HOST}" ] || [ -n "${DATABASE_URL}" ] || [ -n "${DB_URL}" ]; then
     done
 fi
 
-# Run database migrations if enabled
-if [ "${RUN_MIGRATIONS:-false}" = "true" ] || [ "${RUN_MIGRATIONS:-false}" = "1" ]; then
+# Run database migrations if enabled (defaults to true)
+if [ "${RUN_MIGRATIONS:-true}" = "true" ] || [ "${RUN_MIGRATIONS:-true}" = "1" ]; then
     echo "Running database migrations..."
     php artisan migrate --force --no-interaction || echo "Warning: migrations encountered an issue."
 fi
 
-# Run initial database seeding if requested
-if [ "${RUN_SEEDER:-false}" = "true" ] || [ "${RUN_SEEDER:-false}" = "1" ]; then
+# Run initial database seeding if requested (defaults to true)
+if [ "${RUN_SEEDER:-true}" = "true" ] || [ "${RUN_SEEDER:-true}" = "1" ]; then
     echo "Running initial database seeding..."
     php artisan db:seed --force --no-interaction || echo "Warning: seeding encountered an issue."
 fi
