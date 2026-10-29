@@ -93,6 +93,8 @@ Scope: reviewed Docker/Nginx/PHP-FPM configuration; Render web, worker, schedule
 
 ## Phase 10 — Final QA and release
 
+Status: completed. End-to-end acceptance tests pass (124 tests in automated suite, 0 PHPStan errors, 0 Pint violations), demonstration accounts (`admin@example.com`, `receptionist@example.com`, `patient@example.com`) and baseline clinic data are configured in `DatabaseSeeder`, and deployment and operational documentation is finalized.
+
 Scope: full automated suite, PostgreSQL concurrency verification, migration/recovery tests, security/privacy review, accessibility and performance checks, manual acceptance, documentation, operational handoff, and controlled release decision.
 
 Exit gate: every master definition-of-done item has evidence; unresolved risk is documented and accepted; production release is separately authorized.

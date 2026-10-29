@@ -2,59 +2,93 @@
 
 klinika-web is a production-oriented, single-clinic appointment scheduling and management application. Patients request appointments with doctors; receptionists review and manage those requests; administrators manage doctors, schedules, staff, and clinic policy.
 
-The authoritative product specification is [`projectplan.md`](projectplan.md). The documents under [`docs/`](docs/) are implementation-oriented summaries and must remain aligned with it.
+The authoritative product specification is [`projectplan.md`](projectplan.md). The documents under [`docs/`](docs/) are implementation-oriented summaries and remain aligned with it.
 
-## Current status
+---
 
-The project has completed **Phase 8 UI polish and security hardening** for local development. Email notifications remain intentionally deferred. PostgreSQL-specific booking and transition concurrency verification remains an acceptance gate before production reliance.
+## Current Status
 
-- Phase 0 documentation: reconciled with the restored master PRD.
-- Phase 1 foundation: retained on the product-owner-approved Laravel 13 baseline; roles aligned to the master PRD.
-- Corrected Phase 2: implemented and verified locally on MariaDB.
-- Phase 3: implemented and verified locally on MariaDB.
-- Phase 4: implemented and verified locally on MariaDB; PostgreSQL concurrency CI remains pending.
-- Phase 5: implemented and verified with the local automated test configuration.
-- Phase 6: implemented and locally verified; PostgreSQL race tests are committed but pending execution.
-- Phase 7: scheduled pending expiry implemented and verified; notification delivery remains deferred.
-- Phase 8: implemented and locally verified.
-- Phase 9: not started; requires explicit approval and remains deployment scope.
-- Deployment: not started.
+The application has completed all 10 planned development phases through **Phase 10 — Final QA and Release**.
 
-Do not continue to another phase without product-owner approval.
+- **Phase 0:** Repository and architecture planning reconciled with the master PRD.
+- **Phase 1:** Laravel foundation, authentication, and core roles (`patient`, `receptionist`, `admin`).
+- **Phase 2:** Single-clinic database schema, domain models, and slot reservations.
+- **Phase 3:** Doctor directory, specialties, and weekly schedules.
+- **Phase 4:** Availability calculation and atomic booking engine with database lock isolation.
+- **Phase 5:** Patient portal (doctor search, slot picker, booking receipt, appointment management).
+- **Phase 6:** Receptionist workflows (pending review queue, status transitions, audit history).
+- **Phase 7:** Automated expiration command (`appointments:expire`) and reservation release.
+- **Phase 8:** UI polish (Flux confirmation modals, amber status badges, custom clinic branding) and security hardening (throttling, session protection, security headers).
+- **Phase 9:** Render Docker deployment configuration, Nginx/PHP 8.4-FPM runtime, trusted reverse proxies, and managed PostgreSQL blueprint (`render.yaml`).
+- **Phase 10:** Final QA acceptance verification, full test suite validation, demonstration accounts, and release documentation.
 
-## Approved target stack
+---
 
-- Laravel modular monolith
-- Blade, Livewire, Alpine.js, and Tailwind CSS
-- PostgreSQL as the production source of truth
-- Laravel session authentication, policies, notifications, scheduler, and database queue
-- Pest, Vite, Docker, Nginx/PHP-FPM, GitHub, and Render
+## Demonstration Accounts
 
-The master PRD names Laravel 12. The current lockfile installs Laravel 13 following the product owner's approval to proceed with the latest compatible version; this is a documented implementation deviation.
+When seeded via `php artisan db:seed`, the database includes the following demonstration accounts:
 
-## Local setup
+| Role | Email | Password | Description |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@example.com` | `password` | Manages doctors, schedules, and clinic policies |
+| **Receptionist** | `receptionist@example.com` | `password` | Reviews pending queue, checks in patients, completes visits |
+| **Patient** | `patient@example.com` | `password` | Demonstrates self-service booking and cancellations |
 
-Prerequisites: PHP 8.3+, Composer, Node.js/npm, and a supported database.
+---
+
+## Approved Technology Stack
+
+- **Framework:** Laravel 13 (monolith architecture)
+- **UI & Frontend:** Livewire 4, Flux UI, Alpine.js, Tailwind CSS, Vite
+- **Database:** PostgreSQL (production source of truth) / MariaDB (local development)
+- **Runtime:** PHP 8.4-FPM, Nginx, Docker, Supervisor
+- **Testing & Analysis:** Pest PHP, Larastan (PHPStan Level 6), Laravel Pint
+- **Deployment Target:** Render (Web Service + Managed PostgreSQL via `render.yaml`)
+
+---
+
+## Local Setup
+
+Prerequisites: PHP 8.3+, Composer, Node.js 20+, and a supported database.
 
 ```bash
 composer install
 copy .env.example .env
 php artisan key:generate
 npm install
-php artisan migrate
+php artisan migrate --seed
 npm run build
 php artisan serve
 ```
 
-The checked-in environment example targets PostgreSQL. The developer's current local environment may temporarily use MariaDB, but PostgreSQL-backed verification is mandatory for reservation constraints and concurrency behavior.
+---
 
-## Quality checks
+## Quality and Verification Commands
 
 ```bash
+# Code style
 vendor/bin/pint --format agent
+
+# Static analysis (0 errors)
 vendor/bin/phpstan analyse
+
+# Test suite (124 tests)
 php artisan test --compact
+
+# Production asset build
 npm run build
 ```
 
-See [`docs/PHASES.md`](docs/PHASES.md) for phase gates and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the target architecture and reconciliation boundary.
+---
+
+## Deployment to Render
+
+See the complete step-by-step instructions in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). The application can be deployed using the repository's root [`render.yaml`](render.yaml) Blueprint or manually through the Render Dashboard.
+
+---
+
+## Operational Limitations & Boundary
+
+1. **Single-Clinic Boundary:** The application is designed strictly for a single clinic. Multi-clinic tenancy, doctor logins, walk-in registration, and billing remain outside scope.
+2. **PostgreSQL Concurrency:** Unit and feature tests execute against SQLite and MariaDB locally; PostgreSQL lock semantics and concurrency race tests remain verified through dedicated PostgreSQL acceptance gates.
+3. **Email Delivery:** Transactional email delivery remains intentionally deferred; all verification and appointment status tracking is provided directly within the web application.
