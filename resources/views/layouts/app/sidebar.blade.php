@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
@@ -52,6 +52,27 @@
 
             <flux:spacer />
 
+            <flux:sidebar.nav>
+                <div x-data class="w-full">
+                    <flux:sidebar.item
+                        icon="sun"
+                        x-show="$flux.dark"
+                        x-on:click="$flux.appearance = 'light'"
+                        class="cursor-pointer"
+                    >
+                        {{ __('Light mode') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item
+                        icon="moon"
+                        x-show="! $flux.dark"
+                        x-on:click="$flux.appearance = 'dark'"
+                        class="cursor-pointer"
+                    >
+                        {{ __('Dark mode') }}
+                    </flux:sidebar.item>
+                </div>
+            </flux:sidebar.nav>
+
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
@@ -83,6 +104,17 @@
                             </div>
                         </div>
                     </flux:menu.radio.group>
+
+                    <flux:menu.separator />
+
+                    <div x-data>
+                        <flux:menu.item icon="sun" x-show="$flux.dark" x-on:click="$flux.appearance = 'light'">
+                            {{ __('Light mode') }}
+                        </flux:menu.item>
+                        <flux:menu.item icon="moon" x-show="! $flux.dark" x-on:click="$flux.appearance = 'dark'">
+                            {{ __('Dark mode') }}
+                        </flux:menu.item>
+                    </div>
 
                     <flux:menu.separator />
 
