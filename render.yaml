@@ -1,0 +1,87 @@
+services:
+  # Web application service (Nginx + PHP-FPM)
+  - type: web
+    name: klinika-web
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: Klinika
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: klinika-postgres
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: klinika-postgres
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: true
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: RUN_MIGRATIONS
+        value: true
+      - key: RUN_SEEDER
+        value: false
+
+  # Background Queue Worker and Scheduled Task Runner (Optional / Starter tier)
+  - type: worker
+    name: klinika-worker
+    runtime: docker
+    dockerCommand: sh -c "php artisan queue:work --tries=3 --timeout=90"
+    plan: starter
+    region: singapore
+    envVars:
+      - key: APP_NAME
+        value: Klinika
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        fromService:
+          type: web
+          name: klinika-web
+          envVarKey: APP_KEY
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: klinika-postgres
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: klinika-postgres
+          property: connectionString
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+
+databases:
+  # Managed PostgreSQL instance
+  - name: klinika-postgres
+    databaseName: klinikadb
+    user: klinika
+    plan: free
+    region: singapore
+    ipAllowList: []
+

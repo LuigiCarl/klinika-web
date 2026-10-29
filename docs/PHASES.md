@@ -87,9 +87,9 @@ Exit gate: security and accessibility findings are resolved or explicitly accept
 
 ## Phase 9 — Render deployment
 
-Scope: reviewed Docker/Nginx/PHP-FPM configuration; Render web, worker, scheduler, and PostgreSQL; secrets; migrations; health checks; backups; staging verification; rollback and recovery.
+Status: implemented and locally configured. Production multi-stage Dockerfile, tuned Nginx and PHP 8.4-FPM runtime, supervisord process manager, startup entrypoint script with migration and cache execution, trusted reverse proxy middleware, and Render blueprint infrastructure-as-code (`render.yaml`) with persistent PostgreSQL and health check monitoring are configured and documented in `docs/DEPLOYMENT.md`.
 
-Deployment remains out of scope until explicitly approved. Localhost functionality takes priority, and free-tier constraints must be assessed without weakening correctness or durability requirements.
+Scope: reviewed Docker/Nginx/PHP-FPM configuration; Render web, worker, scheduler, and PostgreSQL; secrets; migrations; health checks; backups; staging verification; rollback and recovery.
 
 ## Phase 10 — Final QA and release
 
