@@ -29,7 +29,21 @@
                         </flux:sidebar.item>
                     @endif
                     @if (auth()->user()->hasRole(App\Role::Receptionist))
-                        <flux:sidebar.item icon="inbox" :href="route('receptionist.pending')" :current="request()->routeIs('receptionist.pending')" wire:navigate>{{ __('Pending requests') }}</flux:sidebar.item>
+                        @php
+                            $pendingRequestsCount = App\Models\Appointment::query()
+                                ->where('status', App\AppointmentStatus::Pending)
+                                ->count();
+                        @endphp
+                        <flux:sidebar.item
+                            icon="inbox"
+                            :href="route('receptionist.pending')"
+                            :current="request()->routeIs('receptionist.pending')"
+                            :badge="$pendingRequestsCount > 0 ? (string) $pendingRequestsCount : null"
+                            badge:color="amber"
+                            wire:navigate
+                        >
+                            {{ __('Pending requests') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="calendar-days" :href="route('receptionist.calendar')" :current="request()->routeIs('receptionist.calendar')" wire:navigate>{{ __('Calendar') }}</flux:sidebar.item>
                         <flux:sidebar.item icon="magnifying-glass" :href="route('receptionist.appointments.index')" :current="request()->routeIs('receptionist.appointments.*') || request()->routeIs('receptionist.history')" wire:navigate>{{ __('Appointments & history') }}</flux:sidebar.item>
                     @endif
@@ -37,16 +51,6 @@
             </flux:sidebar.nav>
 
             <flux:spacer />
-
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>

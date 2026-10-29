@@ -40,7 +40,38 @@ new #[Title('Appointment details')] class extends Component {
         <flux:error name="appointment" />
         <flux:error name="rate_limit" />
         @if ($this->canCancel)
-            <div class="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700"><p class="text-sm text-zinc-600 dark:text-zinc-400">Cancellation releases this time, but does not guarantee another slot.</p><div class="mt-3 flex items-center gap-3"><flux:button variant="danger" wire:click="cancel" wire:confirm="Cancel this appointment request?" wire:loading.attr="disabled" wire:target="cancel">Cancel appointment</flux:button><span wire:loading wire:target="cancel" role="status" class="text-sm text-zinc-500">Cancelling...</span></div></div>
+            <div class="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
+                <p class="text-sm text-zinc-600 dark:text-zinc-400">Cancellation releases this time, but does not guarantee another slot.</p>
+                <div class="mt-3 flex items-center gap-3">
+                    <flux:modal.trigger name="confirm-patient-cancel-modal">
+                        <flux:button variant="danger">Cancel appointment</flux:button>
+                    </flux:modal.trigger>
+                    <span wire:loading wire:target="cancel" role="status" class="text-sm text-zinc-500">Cancelling...</span>
+                </div>
+
+                <flux:modal name="confirm-patient-cancel-modal" class="min-w-[22rem] max-w-md space-y-6">
+                    <div>
+                        <flux:heading size="lg">Cancel appointment?</flux:heading>
+                        <flux:subheading class="mt-2">
+                            Are you sure you want to cancel your appointment with <strong class="text-zinc-900 dark:text-zinc-100">{{ $appointment->doctor->name }}</strong> on <strong class="text-zinc-900 dark:text-zinc-100">{{ $appointment->starts_at->timezone('Asia/Manila')->format('F j, Y · g:i A') }}</strong>?
+                        </flux:subheading>
+                        <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                            Cancellation releases this time, but does not guarantee another slot. You may book again at any time.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end gap-3">
+                        <flux:modal.close>
+                            <flux:button variant="filled">Keep appointment</flux:button>
+                        </flux:modal.close>
+                        <flux:modal.close>
+                            <flux:button variant="danger" wire:click="cancel" wire:loading.attr="disabled" wire:target="cancel">
+                                Cancel appointment
+                            </flux:button>
+                        </flux:modal.close>
+                    </div>
+                </flux:modal>
+            </div>
         @elseif (in_array($appointment->status, [AppointmentStatus::Pending, AppointmentStatus::Confirmed], true))
             <p class="mt-8 rounded-lg bg-amber-50 p-4 text-sm text-amber-900">The self-service cancellation cutoff has passed. Please contact the clinic.</p>
         @endif
