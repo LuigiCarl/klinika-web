@@ -353,8 +353,10 @@ new #[Title('Doctor management')] class extends Component {
                 </flux:select>
 
                 <div class="flex justify-end gap-3 pt-2">
-                    <flux:button type="button" variant="filled" wire:click="cancelEditDoctor">{{ __('Cancel') }}</flux:button>
-                    <flux:button type="submit" variant="primary" wire:loading.attr="disabled">{{ __('Save changes') }}</flux:button>
+                    <flux:modal.close>
+                        <flux:button type="button" variant="filled">{{ __('Cancel') }}</flux:button>
+                    </flux:modal.close>
+                    <flux:button type="submit" variant="primary">{{ __('Save changes') }}</flux:button>
                 </div>
             </form>
         </flux:modal>
