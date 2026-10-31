@@ -59,11 +59,14 @@ new #[Title('Pending requests')] class extends Component {
 <div
     wire:poll.10s="checkQueue"
     class="space-y-6"
-    x-data="{ soundEnabled: @entangle('soundEnabled') }"
-    x-on:new-request-alert.window="
-        if (soundEnabled) {
+    x-data="{
+        playChime() {
+            if (! $wire.soundEnabled) return;
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
@@ -77,7 +80,8 @@ new #[Title('Pending requests')] class extends Component {
                 osc.stop(ctx.currentTime + 0.3);
             } catch (e) {}
         }
-    "
+    }"
+    x-on:new-request-alert.window="playChime()"
 >
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
