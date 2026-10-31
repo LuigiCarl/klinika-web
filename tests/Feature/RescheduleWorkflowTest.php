@@ -14,6 +14,7 @@ use App\Services\AppointmentTransitionService;
 use App\Services\BookingService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 
@@ -39,7 +40,7 @@ it('reschedules an appointment, swaps slot reservations atomically, logs audit e
     $bookingService = app(BookingService::class);
     $transitionService = app(AppointmentTransitionService::class);
 
-    $appointment = $bookingService->book($patient, $doctor, $initialStart->utc(), 'resched-test-1');
+    $appointment = $bookingService->book($patient, $doctor, $initialStart->utc(), (string) Str::uuid());
     $appointment = $transitionService->transitionByReceptionist($appointment, AppointmentStatus::Confirmed, $receptionist);
 
     Livewire::actingAs($receptionist)
@@ -83,8 +84,8 @@ it('rejects rescheduling into an already booked slot and preserves original rese
     $bookingService = app(BookingService::class);
     $rescheduleService = app(AppointmentRescheduleService::class);
 
-    $apptOne = $bookingService->book($patientOne, $doctor, $slotOne->utc(), 'resched-conflict-1');
-    $bookingService->book($patientTwo, $doctor, $slotTwo->utc(), 'resched-conflict-2');
+    $apptOne = $bookingService->book($patientOne, $doctor, $slotOne->utc(), (string) Str::uuid());
+    $bookingService->book($patientTwo, $doctor, $slotTwo->utc(), (string) Str::uuid());
 
     expect(fn () => $rescheduleService->reschedule($apptOne, $slotTwo->utc(), $receptionist, 'Conflict attempt'))
         ->toThrow(ValidationException::class);

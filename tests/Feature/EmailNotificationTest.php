@@ -15,6 +15,7 @@ use App\Services\BookingService;
 use App\Services\IcsGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 it('dispatches emails on booking request, approval with ics attachment, and cancellation', function () {
     Mail::fake();
@@ -40,7 +41,7 @@ it('dispatches emails on booking request, approval with ics attachment, and canc
     $bookingService = app(BookingService::class);
     $transitionService = app(AppointmentTransitionService::class);
 
-    $appointment = $bookingService->book($patient, $doctor, $startsAt->utc(), 'email-test-key-1');
+    $appointment = $bookingService->book($patient, $doctor, $startsAt->utc(), (string) Str::uuid());
 
     Mail::assertSent(AppointmentRequested::class, function (AppointmentRequested $mail) use ($appointment, $patient): bool {
         return $mail->hasTo($patient->user->email)
