@@ -88,6 +88,13 @@ Appointment::create([...]); // Two simultaneous requests both pass the check!
    - Even if two requests arrive at the exact same millisecond, PostgreSQL rejects the second insertion with a unique-violation exception, safely translated into an informative conflict response without exposing database errors.
 3. **Idempotency Guard**: Every booking submission includes a client-generated UUID idempotency key, preventing accidental double-charges or duplicate appointments during network retries.
 
+### 🔬 Run the Live Concurrency Simulation
+You can test and observe race-condition prevention directly in your terminal:
+```bash
+php artisan clinic:simulate-concurrency --attempts=5
+```
+This command fires competing booking transactions targeting the exact same doctor time slot. It generates an audit report verifying that **1 transaction claims the reservation, 4 are gracefully caught, and exactly 1 appointment is persisted in the database with 0 double-bookings.**
+
 ---
 
 ## ⚡ 1-Click Interactive Demo Accounts

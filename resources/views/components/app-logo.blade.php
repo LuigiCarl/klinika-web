@@ -3,7 +3,7 @@
 ])
 
 @php
-    $brandName = in_array(config('app.name'), ['Laravel', 'klinika-web', ''], true) ? 'Klinika' : config('app.name', 'Klinika');
+    $brandName = 'Klinika';
 @endphp
 
 @if($sidebar)

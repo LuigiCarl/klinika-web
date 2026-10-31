@@ -53,6 +53,10 @@ it('allows only one concurrent request to reserve the same doctor slots in Postg
                     file_put_contents($barrier.DIRECTORY_SEPARATOR.'result-'.$attempt, $exception::class);
                 }
 
+                if (function_exists('posix__exit')) {
+                    posix__exit(0);
+                }
+
                 exit(0);
             }
 
