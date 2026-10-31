@@ -6,4 +6,3 @@ it('executes the concurrency simulation command and validates single-slot reserv
         ->expectsOutputToContain('INTEGRITY PASS: Exactly 1 transaction acquired the slot reservation.')
         ->assertSuccessful();
 });
-
