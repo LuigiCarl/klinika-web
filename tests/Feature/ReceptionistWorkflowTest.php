@@ -36,6 +36,32 @@ it('approves a request through the receptionist queue', function () {
     expect($appointment->refresh()->status)->toBe(AppointmentStatus::Confirmed);
 });
 
+it('polls and alerts when new pending requests arrive in the triage queue', function () {
+    $receptionist = User::factory()->receptionist()->create();
+    $this->actingAs($receptionist);
+
+    $component = Livewire::test('pages::receptionist.pending');
+    expect($component->get('previousCount'))->toBe(0);
+
+    // Simulate new patient booking an appointment
+    $appointment = Appointment::factory()->create(['status' => AppointmentStatus::Pending]);
+
+    $component->call('checkQueue')
+        ->assertDispatched('new-request-alert', count: 1);
+
+    expect($component->get('previousCount'))->toBe(1);
+});
+
+it('allows receptionist to toggle sound alert notification preference', function () {
+    $receptionist = User::factory()->receptionist()->create();
+    $this->actingAs($receptionist);
+
+    Livewire::test('pages::receptionist.pending')
+        ->assertSet('soundEnabled', true)
+        ->set('soundEnabled', false)
+        ->assertSet('soundEnabled', false);
+});
+
 it('rejects with a reason through appointment details and shows audit history', function () {
     $receptionist = User::factory()->receptionist()->create();
     $appointment = Appointment::factory()->create();

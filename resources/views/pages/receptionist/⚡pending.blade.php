@@ -3,6 +3,7 @@
 use App\AppointmentStatus;
 use App\Models\Appointment;
 use App\Services\AppointmentTransitionService;
+use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -11,7 +12,14 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Pending requests')] class extends Component {
-    public function mount(): void { Gate::authorize('viewAny', Appointment::class); }
+    public int $previousCount = 0;
+    public bool $soundEnabled = true;
+
+    public function mount(): void
+    {
+        Gate::authorize('viewAny', Appointment::class);
+        $this->previousCount = Appointment::query()->where('status', AppointmentStatus::Pending)->count();
+    }
 
     /** @return Collection<int, Appointment> */
     #[Computed]
@@ -20,18 +28,80 @@ new #[Title('Pending requests')] class extends Component {
         return Appointment::query()->with(['patient.user', 'doctor.specialty'])->where('status', AppointmentStatus::Pending)->orderBy('starts_at')->get();
     }
 
+    public function checkQueue(): void
+    {
+        $currentCount = Appointment::query()->where('status', AppointmentStatus::Pending)->count();
+
+        if ($currentCount > $this->previousCount) {
+            $diff = $currentCount - $this->previousCount;
+            $this->dispatch('new-request-alert', count: $diff);
+            Flux::toast(
+                variant: 'info',
+                heading: __('New request received'),
+                text: trans_choice(':count new appointment request awaiting review.|:count new appointment requests awaiting review.', $diff, ['count' => $diff])
+            );
+        }
+
+        $this->previousCount = $currentCount;
+        unset($this->requests);
+    }
+
     public function approve(int $appointmentId, AppointmentTransitionService $service): void
     {
         $appointment = Appointment::query()->findOrFail($appointmentId);
         $service->transitionByReceptionist($appointment, AppointmentStatus::Confirmed, Auth::user());
+        $this->previousCount = max(0, $this->previousCount - 1);
         unset($this->requests);
+        Flux::toast(variant: 'success', text: __('Appointment approved.'));
     }
 }; ?>
 
-<div class="space-y-6">
-    <div>
-        <flux:heading size="xl">Pending requests</flux:heading>
-        <flux:text class="mt-1">Approve eligible requests or open one to record a rejection reason.</flux:text>
+<div
+    wire:poll.10s="checkQueue"
+    class="space-y-6"
+    x-data="{ soundEnabled: @entangle('soundEnabled') }"
+    x-on:new-request-alert.window="
+        if (soundEnabled) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {}
+        }
+    "
+>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <div class="flex items-center gap-2.5">
+                <flux:heading size="xl">{{ __('Pending requests') }}</flux:heading>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    {{ __('Live Queue (10s)') }}
+                </span>
+            </div>
+            <flux:text class="mt-1">{{ __('Approve eligible requests or open one to record a rejection reason.') }}</flux:text>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <flux:button
+                size="sm"
+                variant="ghost"
+                wire:click="$toggle('soundEnabled')"
+                :icon="$soundEnabled ? 'speaker-wave' : 'speaker-x-mark'"
+                :tooltip="$soundEnabled ? __('Sound alert enabled') : __('Sound alert muted')"
+            >
+                {{ $soundEnabled ? __('Audio On') : __('Audio Muted') }}
+            </flux:button>
+        </div>
     </div>
     <flux:error name="appointment" />
     <flux:error name="rate_limit" />
