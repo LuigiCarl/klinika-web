@@ -25,6 +25,18 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->middleware('role:admin')
         ->name('admin.analytics');
 
+    Route::livewire('admin/receptionists', 'pages::admin.receptionists')
+        ->middleware('role:admin')
+        ->name('admin.receptionists');
+
+    Route::livewire('admin/settings', 'pages::admin.settings')
+        ->middleware('role:admin')
+        ->name('admin.settings');
+
+    Route::livewire('admin/audits', 'pages::admin.audits')
+        ->middleware('role:admin')
+        ->name('admin.audits');
+
     Route::middleware('role:patient')->prefix('patient')->name('patient.')->group(function () {
         Route::livewire('dashboard', 'pages::patient.dashboard')->name('dashboard');
         Route::livewire('doctors/{doctor}/book', 'pages::patient.book')->name('book');

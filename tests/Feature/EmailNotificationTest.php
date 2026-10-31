@@ -71,4 +71,3 @@ it('dispatches emails on booking request, approval with ics attachment, and canc
             && $mail->reason === 'Doctor emergency leave';
     });
 });
-

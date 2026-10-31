@@ -45,4 +45,3 @@ class AppointmentApproved extends Mailable
         ];
     }
 }
-

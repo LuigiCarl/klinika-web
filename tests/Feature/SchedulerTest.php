@@ -48,4 +48,3 @@ it('dispatches email reminders for confirmed appointments within the next 24 hou
     Mail::assertSent(AppointmentReminder::class, 1);
     Mail::assertSent(AppointmentReminder::class, fn (AppointmentReminder $mail): bool => $mail->appointment->id === $upcoming->id);
 });
-

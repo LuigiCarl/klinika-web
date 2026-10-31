@@ -54,4 +54,3 @@ it('advances the booking stepper through date selection, slot selection, and sum
         ->assertSee('Selected Appointment Summary')
         ->assertSee('Dr. Stepper');
 });
-

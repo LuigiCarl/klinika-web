@@ -92,4 +92,3 @@ it('rejects rescheduling into an already booked slot and preserves original rese
     expect($apptOne->refresh()->starts_at->equalTo($slotOne->utc()))->toBeTrue()
         ->and(DoctorSlotReservation::query()->where('appointment_id', $apptOne->id)->where('slot_starts_at', $slotOne->utc())->exists())->toBeTrue();
 });
-

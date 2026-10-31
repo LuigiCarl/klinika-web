@@ -27,8 +27,17 @@
                         <flux:sidebar.item icon="users" :href="route('admin.doctors')" :current="request()->routeIs('admin.doctors')" wire:navigate>
                             {{ __('Doctors & schedules') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="user-group" :href="route('admin.receptionists')" :current="request()->routeIs('admin.receptionists')" wire:navigate>
+                            {{ __('Receptionists') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="chart-bar" :href="route('admin.analytics')" :current="request()->routeIs('admin.analytics')" wire:navigate>
                             {{ __('Analytics & KPIs') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="adjustments-horizontal" :href="route('admin.settings')" :current="request()->routeIs('admin.settings')" wire:navigate>
+                            {{ __('Clinic settings') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="clipboard-document-list" :href="route('admin.audits')" :current="request()->routeIs('admin.audits')" wire:navigate>
+                            {{ __('Audit history') }}
                         </flux:sidebar.item>
                     @endif
                     @if (auth()->user()->hasRole(App\Role::Receptionist))

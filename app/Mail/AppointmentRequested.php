@@ -32,4 +32,3 @@ class AppointmentRequested extends Mailable
         );
     }
 }
-

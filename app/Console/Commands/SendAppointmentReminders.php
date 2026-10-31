@@ -38,4 +38,3 @@ class SendAppointmentReminders extends Command
         return self::SUCCESS;
     }
 }
-

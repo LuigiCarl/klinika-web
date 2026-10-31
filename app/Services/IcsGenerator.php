@@ -46,4 +46,3 @@ class IcsGenerator
         return str_replace([',', ';'], ['\,', '\;'], $value);
     }
 }
-

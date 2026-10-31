@@ -32,4 +32,3 @@ class AppointmentCancelled extends Mailable
         );
     }
 }
-

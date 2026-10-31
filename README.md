@@ -6,7 +6,7 @@
 ![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
-![Pest Tests](https://img.shields.io/badge/Tests-145%20Passed-success?logo=pest&logoColor=white)
+![Pest Tests](https://img.shields.io/badge/Tests-155%20Passed-success?logo=pest&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED?logo=docker&logoColor=white)
 ![Style: Pint](https://img.shields.io/badge/Code%20Style-Laravel%20Pint-00D4B2)
 
@@ -24,6 +24,7 @@ Unlike standard CRUD applications, **Klinika** is engineered to solve the most d
 
 * **Atomic Slot Reservation Engine**: Eliminates double-bookings using PostgreSQL row-level locks (`SELECT ... FOR UPDATE`), atomic transactions, and unique slot reservation constraints (`(doctor_id, slot_starts_at)` and `(patient_id, slot_starts_at)`).
 * **Admin Analytics & KPI Dashboard**: Executive clinic metrics covering completion rates, no-show rates, average lead times, doctor utilization, and specialty demand (`/admin/analytics`).
+* **Full Administrator Operations Suite**: Complete management for doctors & schedules (`/admin/doctors`), receptionist staff provisioning (`/admin/receptionists`), clinic operational settings (`/admin/settings`), and immutable system & appointment audit history (`/admin/audits`).
 * **Automated Email & `.ics` Calendar Invites**: Real-time HTML email notifications for appointment requests, approvals (with RFC-5545 `.ics` attachments), cancellations, and scheduled 24-hour reminders.
 * **Conflict-Safe Rescheduling Engine**: Receptionist rescheduling workflow that atomically swaps slot reservations inside a locked transaction and logs audit history.
 * **Live Clinic Triage**: Real-time queue polling (`wire:poll.10s`), synthesized Web Audio notifications, and active metrics for receptionists.
@@ -107,7 +108,7 @@ You can test all roles immediately using the **1-Click Demo Access** buttons on 
 
 | Role | Email | Password | Persona & Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Admin** | `admin@example.com` | `password` | Specialties, doctor roster, working hours, breaks, and unavailability. |
+| **Admin** | `admin@example.com` | `password` | Specialties, doctor roster, schedules, receptionists, clinic settings, analytics, and audit history. |
 | **Receptionist** | `receptionist@example.com` | `password` | Real-time pending queue, check-in desk, CSV export & daily manifest. |
 | **Patient** | `patient@example.com` | `password` | 15/30/45/60m slot picker, booking receipt, self-service cancellation. |
 

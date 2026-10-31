@@ -84,4 +84,3 @@ it('displays clinic KPIs, doctor utilization, and specialty demand for administr
         ->set('range', 'all')
         ->assertSee('33.3%');
 });
-

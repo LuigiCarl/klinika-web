@@ -32,4 +32,3 @@ class AppointmentReminder extends Mailable
         );
     }
 }
-
