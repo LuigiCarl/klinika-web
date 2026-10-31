@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\AppointmentStatus;
+use App\Mail\AppointmentApproved;
+use App\Mail\AppointmentCancelled;
 use App\Models\Appointment;
 use App\Models\ClinicSetting;
 use App\Models\Doctor;
@@ -11,6 +13,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -141,7 +144,19 @@ class AppointmentTransitionService
             'reason' => $reason,
         ]);
 
-        return $appointment->refresh();
+        $refreshed = $appointment->refresh()->loadMissing(['doctor.specialty', 'patient.user']);
+
+        DB::afterCommit(function () use ($refreshed, $target, $reason): void {
+            $email = $refreshed->patient->user->email;
+
+            if ($target === AppointmentStatus::Confirmed) {
+                Mail::to($email)->send(new AppointmentApproved($refreshed));
+            } elseif (in_array($target, [AppointmentStatus::Cancelled, AppointmentStatus::Rejected], true)) {
+                Mail::to($email)->send(new AppointmentCancelled($refreshed, $reason));
+            }
+        });
+
+        return $refreshed;
     }
 
     private function validatedReason(?string $reason): string

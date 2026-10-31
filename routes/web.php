@@ -21,6 +21,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->middleware('role:admin')
         ->name('admin.doctors');
 
+    Route::livewire('admin/analytics', 'pages::admin.analytics')
+        ->middleware('role:admin')
+        ->name('admin.analytics');
+
     Route::middleware('role:patient')->prefix('patient')->name('patient.')->group(function () {
         Route::livewire('dashboard', 'pages::patient.dashboard')->name('dashboard');
         Route::livewire('doctors/{doctor}/book', 'pages::patient.book')->name('book');

@@ -6,7 +6,7 @@
 ![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
-![Pest Tests](https://img.shields.io/badge/Tests-132%20Passed-success?logo=pest&logoColor=white)
+![Pest Tests](https://img.shields.io/badge/Tests-145%20Passed-success?logo=pest&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED?logo=docker&logoColor=white)
 ![Style: Pint](https://img.shields.io/badge/Code%20Style-Laravel%20Pint-00D4B2)
 
@@ -23,10 +23,14 @@
 Unlike standard CRUD applications, **Klinika** is engineered to solve the most difficult challenge in appointment booking: **concurrency-safe slot reservation under sub-second race conditions**. It guarantees zero double-bookings at the database level while providing real-time operations triage for clinic staff.
 
 * **Atomic Slot Reservation Engine**: Eliminates double-bookings using PostgreSQL row-level locks (`SELECT ... FOR UPDATE`), atomic transactions, and unique slot reservation constraints (`(doctor_id, slot_starts_at)` and `(patient_id, slot_starts_at)`).
+* **Admin Analytics & KPI Dashboard**: Executive clinic metrics covering completion rates, no-show rates, average lead times, doctor utilization, and specialty demand (`/admin/analytics`).
+* **Automated Email & `.ics` Calendar Invites**: Real-time HTML email notifications for appointment requests, approvals (with RFC-5545 `.ics` attachments), cancellations, and scheduled 24-hour reminders.
+* **Conflict-Safe Rescheduling Engine**: Receptionist rescheduling workflow that atomically swaps slot reservations inside a locked transaction and logs audit history.
 * **Live Clinic Triage**: Real-time queue polling (`wire:poll.10s`), synthesized Web Audio notifications, and active metrics for receptionists.
+* **Smart Doctor Directory & 3-Step Booking Stepper**: Instant search/specialty filtering and a guided 3-step patient booking wizard.
 * **1-Click Demo Sandbox**: Evaluators can instantly switch between **Admin**, **Receptionist**, and **Patient** personas with zero password friction.
 * **Clinical Manifest & Daily Schedule**: One-click CSV export and print-optimized clinic day schedules for doctor consultation rooms.
-* **Production Docker Runtime**: Multi-stage Alpine containerization pairing Nginx, PHP 8.4-FPM, Supervisor, and managed PostgreSQL on Render.
+* **Production Docker Runtime**: Multi-stage Alpine containerization pairing Nginx, PHP 8.4-FPM, Supervisor, background worker, scheduler, and managed PostgreSQL on Render.
 
 ---
 

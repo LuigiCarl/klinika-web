@@ -2,7 +2,10 @@
 
 use App\AppointmentStatus;
 use App\Models\Appointment;
+use App\Services\AppointmentRescheduleService;
 use App\Services\AppointmentTransitionService;
+use Carbon\CarbonImmutable;
+use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Title;
@@ -12,17 +15,41 @@ new #[Title('Manage appointment')] class extends Component {
     public Appointment $appointment;
     public string $rejectionReason = '';
     public string $cancellationReason = '';
+    public string $rescheduleStartsAt = '';
+    public string $rescheduleReason = '';
 
     public function mount(Appointment $appointment): void
     {
         Gate::authorize('view', $appointment);
         $this->appointment = $this->loaded($appointment);
+        $this->rescheduleStartsAt = $this->appointment->starts_at->timezone('Asia/Manila')->format('Y-m-d\TH:i');
     }
 
     public function approve(AppointmentTransitionService $service): void { $this->performTransition($service, AppointmentStatus::Confirmed); }
     public function checkIn(AppointmentTransitionService $service): void { $this->performTransition($service, AppointmentStatus::CheckedIn); }
     public function complete(AppointmentTransitionService $service): void { $this->performTransition($service, AppointmentStatus::Completed); }
     public function markNoShow(AppointmentTransitionService $service): void { $this->performTransition($service, AppointmentStatus::NoShow); }
+
+    public function reschedule(AppointmentRescheduleService $service): void
+    {
+        $validated = $this->validate([
+            'rescheduleStartsAt' => ['required', 'date'],
+            'rescheduleReason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $newStart = CarbonImmutable::parse($validated['rescheduleStartsAt'], 'Asia/Manila')->utc();
+
+        $this->appointment = $this->loaded($service->reschedule(
+            $this->appointment,
+            $newStart,
+            Auth::user(),
+            $validated['rescheduleReason'] ?: null,
+        ));
+
+        $this->reset('rescheduleReason');
+        $this->modal('reschedule-appointment-modal')->close();
+        Flux::toast(variant: 'success', text: __('Appointment rescheduled.'));
+    }
 
     public function reject(AppointmentTransitionService $service): void
     {
@@ -50,7 +77,38 @@ new #[Title('Manage appointment')] class extends Component {
 }; ?>
 
 <div class="mx-auto max-w-5xl space-y-6"><flux:link :href="route('receptionist.appointments.index')" wire:navigate>&larr; Appointments</flux:link><section class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900"><div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><flux:heading size="xl">{{ $appointment->patient->user->name }}</flux:heading><flux:text>{{ $appointment->patient->user->email }} · {{ $appointment->patient->phone ?: 'No phone provided' }}</flux:text></div><span class="w-fit rounded-full bg-teal-50 px-3 py-1 text-xs font-bold uppercase text-teal-800">{{ str_replace('_', ' ', $appointment->status->value) }}</span></div><dl class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"><div><dt class="text-sm text-zinc-500">Reference</dt><dd class="font-semibold">{{ $appointment->reference_code }}</dd></div><div><dt class="text-sm text-zinc-500">Doctor</dt><dd class="font-semibold">{{ $appointment->doctor->name }}</dd></div><div><dt class="text-sm text-zinc-500">Schedule</dt><dd class="font-semibold">{{ $appointment->starts_at->timezone('Asia/Manila')->format('M j, Y · g:i A') }}</dd></div><div><dt class="text-sm text-zinc-500">Duration</dt><dd>{{ $appointment->duration_minutes }} minutes</dd></div></dl><flux:error name="appointment" />
+        <flux:error name="starts_at" />
         <flux:error name="rate_limit" />
+
+        @if (in_array($appointment->status, [AppointmentStatus::Pending, AppointmentStatus::Confirmed], true))
+            <div class="mt-4">
+                <flux:modal.trigger name="reschedule-appointment-modal">
+                    <flux:button variant="subtle" size="sm" icon="calendar">{{ __('Reschedule slot') }}</flux:button>
+                </flux:modal.trigger>
+
+                <flux:modal name="reschedule-appointment-modal" class="min-w-[22rem] max-w-md space-y-6">
+                    <div>
+                        <flux:heading size="lg">{{ __('Reschedule appointment') }}</flux:heading>
+                        <flux:subheading class="mt-1">
+                            {{ __('Select a new 15-minute aligned date and time within :doctor’s working hours.', ['doctor' => $appointment->doctor->name]) }}
+                        </flux:subheading>
+                    </div>
+
+                    <form wire:submit="reschedule" class="space-y-4">
+                        <flux:input wire:model="rescheduleStartsAt" :label="__('New Date & Time (Asia/Manila)')" type="datetime-local" step="900" required />
+                        <flux:input wire:model="rescheduleReason" :label="__('Reason (optional)')" placeholder="{{ __('e.g. Doctor schedule conflict') }}" />
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <flux:modal.close>
+                                <flux:button type="button" variant="filled">{{ __('Cancel') }}</flux:button>
+                            </flux:modal.close>
+                            <flux:button type="submit" variant="primary" wire:loading.attr="disabled">{{ __('Confirm reschedule') }}</flux:button>
+                        </div>
+                    </form>
+                </flux:modal>
+            </div>
+        @endif
+
         <div class="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
             @if ($appointment->status === AppointmentStatus::Pending)
                 <div class="grid gap-6 lg:grid-cols-2">

@@ -50,9 +50,14 @@ new class extends Component
             <flux:heading size="xl">{{ __('Administrator dashboard') }}</flux:heading>
             <flux:text class="mt-1">{{ __('Monitor clinic activity and manage scheduling resources.') }}</flux:text>
         </div>
-        <flux:button :href="route('admin.doctors')" variant="primary" wire:navigate>
-            {{ __('Manage doctors and schedules') }}
-        </flux:button>
+        <div class="flex flex-wrap gap-2">
+            <flux:button :href="route('admin.analytics')" variant="filled" wire:navigate>
+                {{ __('View analytics & KPIs') }}
+            </flux:button>
+            <flux:button :href="route('admin.doctors')" variant="primary" wire:navigate>
+                {{ __('Manage doctors and schedules') }}
+            </flux:button>
+        </div>
     </div>
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="{{ __('Clinic overview') }}">

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonInterface $expires_at
  * @property CarbonInterface|null $approved_at
  * @property CarbonInterface|null $cancelled_at
+ * @property CarbonInterface|null $rescheduled_at
  * @property int|null $approved_by
  * @property int|null $cancelled_by
  * @property string|null $cancellation_reason
@@ -29,7 +30,7 @@ class Appointment extends Model
     /** @use HasFactory<AppointmentFactory> */
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'doctor_id', 'reference_code', 'starts_at', 'ends_at', 'duration_minutes', 'status', 'expires_at', 'approved_by', 'approved_at', 'cancelled_by', 'cancelled_at', 'idempotency_key', 'request_fingerprint'];
+    protected $fillable = ['patient_id', 'doctor_id', 'reference_code', 'starts_at', 'ends_at', 'duration_minutes', 'status', 'expires_at', 'approved_by', 'approved_at', 'cancelled_by', 'cancelled_at', 'rescheduled_at', 'idempotency_key', 'request_fingerprint'];
 
     protected function casts(): array
     {
@@ -40,6 +41,7 @@ class Appointment extends Model
             'expires_at' => 'immutable_datetime',
             'approved_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
+            'rescheduled_at' => 'immutable_datetime',
             'duration_minutes' => 'integer',
         ];
     }

@@ -27,6 +27,9 @@
                         <flux:sidebar.item icon="users" :href="route('admin.doctors')" :current="request()->routeIs('admin.doctors')" wire:navigate>
                             {{ __('Doctors & schedules') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="chart-bar" :href="route('admin.analytics')" :current="request()->routeIs('admin.analytics')" wire:navigate>
+                            {{ __('Analytics & KPIs') }}
+                        </flux:sidebar.item>
                     @endif
                     @if (auth()->user()->hasRole(App\Role::Receptionist))
                         @php

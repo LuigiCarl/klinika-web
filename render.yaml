@@ -76,6 +76,42 @@ services:
       - key: CACHE_STORE
         value: database
 
+  # Scheduled Task Runner (Optional / Starter tier)
+  - type: worker
+    name: klinika-scheduler
+    runtime: docker
+    dockerCommand: sh -c "php artisan schedule:work"
+    plan: starter
+    region: singapore
+    envVars:
+      - key: APP_NAME
+        value: Klinika
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        fromService:
+          type: web
+          name: klinika-web
+          envVarKey: APP_KEY
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: klinika-postgres
+          property: internalConnectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: klinika-postgres
+          property: internalConnectionString
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+
 databases:
   # Managed PostgreSQL instance
   - name: klinika-postgres

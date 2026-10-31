@@ -12,3 +12,9 @@ Schedule::command('appointments:expire')
     ->everyMinute()
     ->withoutOverlapping(10)
     ->onOneServer();
+
+Schedule::command('appointments:send-reminders')
+    ->dailyAt('08:00')
+    ->timezone('Asia/Manila')
+    ->withoutOverlapping(15)
+    ->onOneServer();

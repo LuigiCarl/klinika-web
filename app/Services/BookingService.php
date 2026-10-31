@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\AppointmentStatus;
 use App\Exceptions\BookingConflictException;
+use App\Mail\AppointmentRequested;
 use App\Models\Appointment;
 use App\Models\ClinicSetting;
 use App\Models\Doctor;
@@ -12,6 +13,7 @@ use App\Role;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -88,7 +90,13 @@ class BookingService
                     'new_status' => AppointmentStatus::Pending,
                 ]);
 
-                return $appointment->load(['doctorSlotReservations', 'patientSlotReservations', 'events']);
+                $loaded = $appointment->load(['doctorSlotReservations', 'patientSlotReservations', 'events', 'doctor.specialty', 'patient.user']);
+
+                DB::afterCommit(function () use ($loaded): void {
+                    Mail::to($loaded->patient->user->email)->send(new AppointmentRequested($loaded));
+                });
+
+                return $loaded;
             }, 3);
         } catch (QueryException $exception) {
             if ($this->isReservationConflict($exception)) {
