@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Auth\DemoLoginController;
 use App\Http\Controllers\ReadinessController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 Route::get('ready', ReadinessController::class)->name('readiness');
+Route::post('demo-login', DemoLoginController::class)->middleware('throttle:20,1')->name('demo.login');
 Route::livewire('doctors', 'pages::doctors.index')->name('doctors.index');
 Route::livewire('doctors/{doctor}', 'pages::doctors.show')->name('doctors.show');
 

@@ -18,6 +18,30 @@
             </div>
         </div>
         <flux:menu.separator />
+        <flux:menu.submenu icon="user-group" :heading="__('Switch Role (Demo)')">
+            <form method="POST" action="{{ route('demo.login') }}">
+                @csrf
+                <input type="hidden" name="role" value="admin">
+                <flux:menu.item as="button" type="submit" icon="shield-check" class="w-full cursor-pointer">
+                    {{ __('Clinic Admin') }}
+                </flux:menu.item>
+            </form>
+            <form method="POST" action="{{ route('demo.login') }}">
+                @csrf
+                <input type="hidden" name="role" value="receptionist">
+                <flux:menu.item as="button" type="submit" icon="inbox-stack" class="w-full cursor-pointer">
+                    {{ __('Receptionist') }}
+                </flux:menu.item>
+            </form>
+            <form method="POST" action="{{ route('demo.login') }}">
+                @csrf
+                <input type="hidden" name="role" value="patient">
+                <flux:menu.item as="button" type="submit" icon="user" class="w-full cursor-pointer">
+                    {{ __('Patient') }}
+                </flux:menu.item>
+            </form>
+        </flux:menu.submenu>
+        <flux:menu.separator />
         <flux:menu.submenu icon="swatch" :heading="__('Theme')">
             <flux:menu.item icon="sun" x-data x-on:click="$flux.appearance = 'light'">
                 {{ __('Light') }}
