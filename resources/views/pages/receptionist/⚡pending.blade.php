@@ -60,25 +60,47 @@ new #[Title('Pending requests')] class extends Component {
     wire:poll.10s="checkQueue"
     class="space-y-6"
     x-data="{
-        playChime() {
-            if (! $wire.soundEnabled) return;
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                if (ctx.state === 'suspended') {
-                    ctx.resume();
+        audioCtx: null,
+        soundEnabled: $wire.entangle('soundEnabled'),
+        init() {
+            const unlock = () => {
+                if (!this.audioCtx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.audioCtx = new AudioCtx();
                 }
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+                if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+            };
+            window.addEventListener('click', unlock, { once: true });
+            window.addEventListener('keydown', unlock, { once: true });
+        },
+        async playChime(force = false) {
+            if (!this.soundEnabled && !force) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!this.audioCtx) {
+                    this.audioCtx = new AudioCtx();
+                }
+                if (this.audioCtx.state === 'suspended') {
+                    await this.audioCtx.resume();
+                }
+                const now = this.audioCtx.currentTime;
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
-                gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
                 osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.3);
-            } catch (e) {}
+                gain.connect(this.audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } catch (e) {
+                console.warn('Audio alert blocked or unavailable:', e);
+            }
         }
     }"
     x-on:new-request-alert.window="playChime()"
@@ -98,8 +120,19 @@ new #[Title('Pending requests')] class extends Component {
         <div class="flex items-center gap-2">
             <flux:button
                 size="sm"
+                variant="subtle"
+                x-on:click="playChime(true)"
+                icon="bell"
+                :tooltip="__('Test notification chime')"
+            >
+                {{ __('Test Chime') }}
+            </flux:button>
+
+            <flux:button
+                size="sm"
                 variant="ghost"
                 wire:click="$toggle('soundEnabled')"
+                x-on:click="if (!soundEnabled) { setTimeout(() => playChime(true), 100); }"
                 :icon="$soundEnabled ? 'speaker-wave' : 'speaker-x-mark'"
                 :tooltip="$soundEnabled ? __('Sound alert enabled') : __('Sound alert muted')"
             >
