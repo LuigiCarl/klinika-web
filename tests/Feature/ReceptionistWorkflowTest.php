@@ -3,6 +3,7 @@
 use App\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\ClinicSetting;
+use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\User;
 use Livewire\Livewire;
@@ -23,7 +24,33 @@ it('renders the receptionist dashboard pending queue calendar and search', funct
     $this->get(route('receptionist.pending'))->assertOk()->assertSee($appointment->reference_code);
     $this->get(route('receptionist.calendar'))->assertOk()->assertSee('Appointment calendar');
     Livewire::test('pages::receptionist.appointments')->set('search', 'SEARCHABLE')->assertSee($appointment->reference_code);
-    Livewire::test('pages::receptionist.calendar')->set('date', 'not-a-date')->assertSee('No appointments on this date.');
+    Livewire::test('pages::receptionist.calendar')->set('date', 'not-a-date')->assertSee('No appointments scheduled for this date and filter.');
+});
+
+it('filters the calendar manifest by doctor and exports CSV', function () {
+    $receptionist = User::factory()->receptionist()->create();
+    $this->actingAs($receptionist);
+
+    $docA = Doctor::factory()->create(['name' => 'Dr. Alpha']);
+    $docB = Doctor::factory()->create(['name' => 'Dr. Beta']);
+
+    $today = now('Asia/Manila')->startOfDay();
+    $aptA = Appointment::factory()->for($docA)->create(['starts_at' => $today->clone()->addHours(10)->utc(), 'reference_code' => 'APT-ALPHA']);
+    $aptB = Appointment::factory()->for($docB)->create(['starts_at' => $today->clone()->addHours(11)->utc(), 'reference_code' => 'APT-BETA']);
+
+    $component = Livewire::test('pages::receptionist.calendar')
+        ->set('date', $today->toDateString())
+        ->assertSee('APT-ALPHA')
+        ->assertSee('APT-BETA');
+
+    // Filter by Doctor A
+    $component->set('doctorId', (string) $docA->id)
+        ->assertSee('APT-ALPHA')
+        ->assertDontSee('APT-BETA');
+
+    // Export CSV using Livewire download assertion
+    $component->call('exportCsv')
+        ->assertFileDownloaded("clinic-manifest-{$today->toDateString()}.csv");
 });
 
 it('approves a request through the receptionist queue', function () {
