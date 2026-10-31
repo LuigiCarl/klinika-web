@@ -65,4 +65,4 @@ jobs:
         run: composer types:check
 
       - name: Run Test Suite (Pest)
-        run: php artisan test --compact
+        run: php artisan test
