@@ -6,7 +6,7 @@
 ![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
-![Pest Tests](https://img.shields.io/badge/Tests-155%20Passed-success?logo=pest&logoColor=white)
+![Pest Tests](https://img.shields.io/badge/Tests-158%20Passed-success?logo=pest&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED?logo=docker&logoColor=white)
 ![Style: Pint](https://img.shields.io/badge/Code%20Style-Laravel%20Pint-00D4B2)
 
@@ -27,6 +27,7 @@ Unlike standard CRUD applications, **Klinika** is engineered to solve the most d
 * **Full Administrator Operations Suite**: Complete management for doctors & schedules (`/admin/doctors`), receptionist staff provisioning (`/admin/receptionists`), clinic operational settings (`/admin/settings`), and immutable system & appointment audit history (`/admin/audits`).
 * **Automated Email & `.ics` Calendar Invites**: Real-time HTML email notifications for appointment requests, approvals (with RFC-5545 `.ics` attachments), cancellations, and scheduled 24-hour reminders.
 * **Conflict-Safe Rescheduling Engine**: Receptionist rescheduling workflow that atomically swaps slot reservations inside a locked transaction and logs audit history.
+* **Smart Doctor Search & Interactive Booking Stepper**: URL-persisted multi-facet directory filtering (search, specialty pills, weekday availability, duration) with next-available slot badges and a guided 3-step booking wizard featuring quick-date chips and Morning/Afternoon slot grouping.
 * **Live Clinic Triage**: Real-time queue polling (`wire:poll.10s`), synthesized Web Audio notifications, and active metrics for receptionists.
 * **Smart Doctor Directory & 3-Step Booking Stepper**: Instant search/specialty filtering and a guided 3-step patient booking wizard.
 * **1-Click Demo Sandbox**: Evaluators can instantly switch between **Admin**, **Receptionist**, and **Patient** personas with zero password friction.
@@ -125,7 +126,7 @@ You can test all roles immediately using the **1-Click Demo Access** buttons on 
 | **Database** | PostgreSQL 17 (production), SQLite / MariaDB (testing/local) |
 | **Concurrency** | PostgreSQL transactions, `FOR UPDATE` pessimistic locks, unique reservation constraints |
 | **Container & Ops** | Multi-stage Docker, Alpine Linux, Nginx, PHP-FPM, Supervisor |
-| **Quality & Tests** | Pest PHP (132 tests), PHPStan Level 6, Laravel Pint |
+| **Quality & Tests** | Pest PHP (158 tests), PHPStan Level 6, Laravel Pint |
 | **Deployment** | Render Web Service + Managed PostgreSQL (`render.yaml`) |
 
 ---
@@ -158,7 +159,7 @@ php artisan serve
 The application maintains comprehensive test coverage across business boundaries, state transitions, security controls, and race conditions:
 
 ```bash
-# Run full Pest test suite (132 tests)
+# Run full Pest test suite (158 tests)
 php artisan test --compact
 
 # Code style compliance
