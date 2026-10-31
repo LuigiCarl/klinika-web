@@ -13,7 +13,14 @@ class ClinicSetting extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['timezone', 'booking_window_days', 'minimum_lead_hours', 'minimum_review_hours', 'approval_expiry_hours', 'cancellation_cutoff_hours', 'no_show_grace_minutes'];
+    protected $fillable = ['id', 'timezone', 'booking_window_days', 'minimum_lead_hours', 'minimum_review_hours', 'approval_expiry_hours', 'cancellation_cutoff_hours', 'no_show_grace_minutes'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (ClinicSetting $setting): void {
+            $setting->id ??= 1;
+        });
+    }
 
     protected function casts(): array
     {
