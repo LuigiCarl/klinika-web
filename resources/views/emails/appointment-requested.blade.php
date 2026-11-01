@@ -7,7 +7,7 @@
 <body style="font-family: sans-serif; color: #18181b; line-height: 1.6;">
     <h2>Appointment Request Received</h2>
     <p>Hello {{ $appointment->patient->user->name }},</p>
-    <p>We have received your appointment request at <strong>Klinika Medical Center</strong>. Our reception desk is reviewing your request.</p>
+    <p>We have received your appointment request at <strong>Klinikaly Medical Center</strong>. Our reception desk is reviewing your request.</p>
     <ul>
         <li><strong>Reference Code:</strong> {{ $appointment->reference_code }}</li>
         <li><strong>Doctor:</strong> {{ $appointment->doctor->name }} ({{ $appointment->doctor->specialty->name }})</li>

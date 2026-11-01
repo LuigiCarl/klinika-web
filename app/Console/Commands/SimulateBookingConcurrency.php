@@ -39,7 +39,7 @@ class SimulateBookingConcurrency extends Command
      */
     public function handle(BookingService $bookingService): int
     {
-        $this->components->info('Klinika Concurrency & Race-Condition Demonstrator');
+        $this->components->info('Klinikaly Concurrency & Race-Condition Demonstrator');
         $this->line('Testing atomic slot reservation and double-booking prevention under concurrent load.');
         $this->newLine();
 

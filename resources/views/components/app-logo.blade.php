@@ -3,7 +3,7 @@
 ])
 
 @php
-    $brandName = 'Klinika';
+    $brandName = config('app.name', 'Klinikaly');
 @endphp
 
 @if($sidebar)

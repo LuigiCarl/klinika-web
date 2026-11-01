@@ -1,4 +1,4 @@
-# Klinika — Healthcare Appointment & Clinic Operations Engine
+# Klinikaly — Healthcare Appointment & Clinic Operations Engine
 
 <div align="center">
 
@@ -20,7 +20,7 @@
 
 ## 🌟 Executive Summary & Engineering Highlights
 
-Unlike standard CRUD applications, **Klinika** is engineered to solve the most difficult challenge in appointment booking: **concurrency-safe slot reservation under sub-second race conditions**. It guarantees zero double-bookings at the database level while providing real-time operations triage for clinic staff.
+Unlike standard CRUD applications, **Klinikaly** is engineered to solve the most difficult challenge in appointment booking: **concurrency-safe slot reservation under sub-second race conditions**. It guarantees zero double-bookings at the database level while providing real-time operations triage for clinic staff.
 
 * **Atomic Slot Reservation Engine**: Eliminates double-bookings using PostgreSQL row-level locks (`SELECT ... FOR UPDATE`), atomic transactions, and unique slot reservation constraints (`(doctor_id, slot_starts_at)` and `(patient_id, slot_starts_at)`).
 * **Admin Analytics & KPI Dashboard**: Executive clinic metrics covering completion rates, no-show rates, average lead times, doctor utilization, and specialty demand (`/admin/analytics`).
@@ -86,7 +86,7 @@ if (Appointment::where('doctor_id', $doc)->where('starts_at', $time)->exists()) 
 Appointment::create([...]); // Two simultaneous requests both pass the check!
 ```
 
-### Klinika's Two-Tier Integrity Boundary
+### Klinikaly's Two-Tier Integrity Boundary
 1. **Pessimistic Row-Level Locking**: When calculating availability and reserving intervals, doctor schedule rows are locked with `lockForUpdate()`, serializing overlapping mutations within an atomic transaction.
 2. **Database-Enforced Unique Reservation Tables**:
    - `doctor_slot_reservations`: Unique constraint on `(doctor_id, slot_starts_at)`

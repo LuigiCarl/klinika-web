@@ -10,7 +10,7 @@
                     <span class="flex aspect-square size-7 items-center justify-center rounded-lg bg-teal-600 text-white shadow-sm dark:bg-teal-500">
                         <x-app-logo-icon class="size-4 fill-current text-white" />
                     </span>
-                    Klinika
+                    Klinikaly
                 </a>
                 <div class="flex items-center gap-4 text-sm font-medium">
                     <a href="{{ route('doctors.index') }}" class="hover:text-teal-700 dark:hover:text-teal-400">Doctors</a>

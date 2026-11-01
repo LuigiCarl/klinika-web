@@ -166,7 +166,7 @@ new #[Title('Appointment calendar')] class extends Component {
         <div class="border-b border-black pb-4 mb-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight">KLINIKA MEDICAL CLINIC</h1>
+                    <h1 class="text-2xl font-bold tracking-tight">KLINIKALY MEDICAL CLINIC</h1>
                     <p class="text-sm">Daily Patient Appointment Manifest</p>
                 </div>
                 <div class="text-right text-xs">

@@ -29,7 +29,7 @@
                     <span class="flex h-10 w-10 items-center justify-center rounded-md">
                         <x-app-logo-icon class="me-2 h-7 fill-current text-white" />
                     </span>
-                    {{ config('app.name', 'Klinika') }}
+                    {{ config('app.name', 'Klinikaly') }}
                 </a>
 
                 @php
@@ -50,7 +50,7 @@
                             <x-app-logo-icon class="size-9 fill-current text-black dark:text-white" />
                         </span>
 
-                        <span class="sr-only">{{ config('app.name', 'Klinika') }}</span>
+                        <span class="sr-only">{{ config('app.name', 'Klinikaly') }}</span>
                     </a>
                     {{ $slot }}
                 </div>

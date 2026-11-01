@@ -7,7 +7,7 @@
 <body style="font-family: sans-serif; color: #18181b; line-height: 1.6;">
     <h2>Upcoming Appointment Reminder</h2>
     <p>Hello {{ $appointment->patient->user->name }},</p>
-    <p>This is a friendly reminder for your upcoming consultation at <strong>Klinika Medical Center</strong>:</p>
+    <p>This is a friendly reminder for your upcoming consultation at <strong>Klinikaly Medical Center</strong>:</p>
     <ul>
         <li><strong>Reference Code:</strong> {{ $appointment->reference_code }}</li>
         <li><strong>Doctor:</strong> {{ $appointment->doctor->name }} ({{ $appointment->doctor->specialty->name }})</li>

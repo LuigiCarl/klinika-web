@@ -8,7 +8,7 @@ services:
     healthCheckPath: /up
     envVars:
       - key: APP_NAME
-        value: Klinika
+        value: Klinikaly
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -49,7 +49,7 @@ services:
     region: singapore
     envVars:
       - key: APP_NAME
-        value: Klinika
+        value: Klinikaly
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -85,7 +85,7 @@ services:
     region: singapore
     envVars:
       - key: APP_NAME
-        value: Klinika
+        value: Klinikaly
       - key: APP_ENV
         value: production
       - key: APP_DEBUG

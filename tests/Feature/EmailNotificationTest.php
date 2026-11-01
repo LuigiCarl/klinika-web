@@ -61,7 +61,7 @@ it('dispatches emails on booking request, approval with ics attachment, and canc
     $ics = IcsGenerator::generate($approved);
     expect($ics)->toContain('BEGIN:VCALENDAR')
         ->and($ics)->toContain('BEGIN:VEVENT')
-        ->and($ics)->toContain("UID:{$approved->reference_code}@klinika.local")
+        ->and($ics)->toContain("UID:{$approved->reference_code}@klinikaly.local")
         ->and($ics)->toContain('Dr. Elena Cruz');
 
     $transitionService->transitionByReceptionist($approved, AppointmentStatus::Cancelled, $receptionist, 'Doctor emergency leave');

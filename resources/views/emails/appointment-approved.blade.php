@@ -7,7 +7,7 @@
 <body style="font-family: sans-serif; color: #18181b; line-height: 1.6;">
     <h2>Your Appointment is Confirmed</h2>
     <p>Hello {{ $appointment->patient->user->name }},</p>
-    <p>Your appointment at <strong>Klinika Medical Center</strong> has been approved and confirmed.</p>
+    <p>Your appointment at <strong>Klinikaly Medical Center</strong> has been approved and confirmed.</p>
     <ul>
         <li><strong>Reference Code:</strong> {{ $appointment->reference_code }}</li>
         <li><strong>Doctor:</strong> {{ $appointment->doctor->name }} ({{ $appointment->doctor->specialty->name }})</li>
