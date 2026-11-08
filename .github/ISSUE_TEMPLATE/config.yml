@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Architecture & Design Documentation
+    url: https://github.com/LuigiCarl/klinika-web/tree/main/docs
+    about: Read deep architectural principles, business rules, and database invariants before submitting feature proposals.
+  - name: 🧭 Contributing Guide
+    url: https://github.com/LuigiCarl/klinika-web/blob/main/CONTRIBUTING.md
+    about: Learn how to set up your local development environment and run tests.
+  - name: 🗺️ Project Roadmap
+    url: https://github.com/LuigiCarl/klinika-web/blob/main/ROADMAP.md
+    about: Review upcoming priorities and feature boundaries.
+

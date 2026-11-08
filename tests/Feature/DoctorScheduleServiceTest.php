@@ -57,6 +57,7 @@ it('rejects unavailability that overlaps an active appointment', function () {
 });
 
 it('rejects removing the only interval covering an active appointment', function () {
+    $this->travelTo('2026-10-24 00:00:00');
     $admin = User::factory()->admin()->create();
     $doctor = Doctor::factory()->create();
     $schedule = DoctorSchedule::factory()->for($doctor)->create([

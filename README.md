@@ -7,12 +7,13 @@
 ![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 ![Pest Tests](https://img.shields.io/badge/Tests-158%20Passed-success?logo=pest&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED?logo=docker&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Style: Pint](https://img.shields.io/badge/Code%20Style-Laravel%20Pint-00D4B2)
+![PHPStan: Level 6](https://img.shields.io/badge/PHPStan-Level%206%20Passed-blue)
 
-**A high-concurrency, production-engineered healthcare appointment booking and clinic management system built with Laravel 13, Livewire, Flux UI, and PostgreSQL.**
+**A high-concurrency, production-engineered healthcare appointment booking and clinic management system built with Laravel 13, Livewire 4, Flux UI, and PostgreSQL.**
 
-[Live Demo](https://klinika-web.onrender.com) · [Architecture & PRD](docs/ARCHITECTURE.md) · [Deployment Guide](docs/DEPLOYMENT.md)
+[Live Demo](https://klinika-web.onrender.com) · [Architecture & PRD](docs/ARCHITECTURE.md) · [Contributing Guide](CONTRIBUTING.md) · [Roadmap](ROADMAP.md) · [Deployment Guide](docs/DEPLOYMENT.md)
 
 </div>
 
@@ -23,13 +24,12 @@
 Unlike standard CRUD applications, **Klinikaly** is engineered to solve the most difficult challenge in appointment booking: **concurrency-safe slot reservation under sub-second race conditions**. It guarantees zero double-bookings at the database level while providing real-time operations triage for clinic staff.
 
 * **Atomic Slot Reservation Engine**: Eliminates double-bookings using PostgreSQL row-level locks (`SELECT ... FOR UPDATE`), atomic transactions, and unique slot reservation constraints (`(doctor_id, slot_starts_at)` and `(patient_id, slot_starts_at)`).
+* **Smart Doctor Directory & 3-Step Booking Stepper**: URL-persisted multi-facet directory filtering (search, specialty pills, weekday availability, duration) with next-available slot badges and a guided 3-step booking wizard featuring quick-date chips and Morning/Afternoon slot grouping.
+* **Live Clinic Triage Desk**: Real-time queue polling (`wire:poll.10s`), synthesized Web Audio notifications, and active metrics for receptionists.
+* **Conflict-Safe Rescheduling Engine**: Receptionist rescheduling workflow that atomically swaps slot reservations inside a locked transaction and logs audit history.
 * **Admin Analytics & KPI Dashboard**: Executive clinic metrics covering completion rates, no-show rates, average lead times, doctor utilization, and specialty demand (`/admin/analytics`).
 * **Full Administrator Operations Suite**: Complete management for doctors & schedules (`/admin/doctors`), receptionist staff provisioning (`/admin/receptionists`), clinic operational settings (`/admin/settings`), and immutable system & appointment audit history (`/admin/audits`).
 * **Automated Email & `.ics` Calendar Invites**: Real-time HTML email notifications for appointment requests, approvals (with RFC-5545 `.ics` attachments), cancellations, and scheduled 24-hour reminders.
-* **Conflict-Safe Rescheduling Engine**: Receptionist rescheduling workflow that atomically swaps slot reservations inside a locked transaction and logs audit history.
-* **Smart Doctor Search & Interactive Booking Stepper**: URL-persisted multi-facet directory filtering (search, specialty pills, weekday availability, duration) with next-available slot badges and a guided 3-step booking wizard featuring quick-date chips and Morning/Afternoon slot grouping.
-* **Live Clinic Triage**: Real-time queue polling (`wire:poll.10s`), synthesized Web Audio notifications, and active metrics for receptionists.
-* **Smart Doctor Directory & 3-Step Booking Stepper**: Instant search/specialty filtering and a guided 3-step patient booking wizard.
 * **1-Click Demo Sandbox**: Evaluators can instantly switch between **Admin**, **Receptionist**, and **Patient** personas with zero password friction.
 * **Clinical Manifest & Daily Schedule**: One-click CSV export and print-optimized clinic day schedules for doctor consultation rooms.
 * **Production Docker Runtime**: Multi-stage Alpine containerization pairing Nginx, PHP 8.4-FPM, Supervisor, background worker, scheduler, and managed PostgreSQL on Render.
@@ -48,6 +48,8 @@ flowchart TD
     Supervisor -->|Manages| Worker["Background Queue Worker\n(appointments:expire)"]
     Worker -->|Releases Expired Slots| Postgres
 ```
+
+For complete architectural decisions, read our **[Architecture Documentation](docs/ARCHITECTURE.md)** and **[Business Rules](docs/BUSINESS_RULES.md)**.
 
 ---
 
@@ -92,7 +94,7 @@ Appointment::create([...]); // Two simultaneous requests both pass the check!
    - `doctor_slot_reservations`: Unique constraint on `(doctor_id, slot_starts_at)`
    - `patient_slot_reservations`: Unique constraint on `(patient_id, slot_starts_at)`
    - Even if two requests arrive at the exact same millisecond, PostgreSQL rejects the second insertion with a unique-violation exception, safely translated into an informative conflict response without exposing database errors.
-3. **Idempotency Guard**: Every booking submission includes a client-generated UUID idempotency key, preventing accidental double-charges or duplicate appointments during network retries.
+3. **Idempotency Guard**: Every booking submission includes a client-generated UUID idempotency key, preventing accidental duplicate appointments during network retries.
 
 ### 🔬 Run the Live Concurrency Simulation
 You can test and observe race-condition prevention directly in your terminal:
@@ -133,24 +135,49 @@ You can test all roles immediately using the **1-Click Demo Access** buttons on 
 
 ## 🚀 Local Setup & Development
 
+### 1. Prerequisites
+- **PHP 8.4+**
+- **Composer 2.x**
+- **Node.js 22.x & npm**
+- **PostgreSQL 17** (or zero-setup SQLite for rapid UI work)
+
+### 2. Installation Steps
 ```bash
-# Clone and install dependencies
+# Clone the repository
 git clone https://github.com/LuigiCarl/klinika-web.git
 cd klinika-web
+
+# Install backend and frontend dependencies
 composer install
 npm install
 
 # Environment configuration
 cp .env.example .env
 php artisan key:generate
+```
 
-# Database migration and demonstration seeding
-php artisan migrate --seed
+### 3. Choose Your Local Database:
+- **Zero-Setup SQLite (Fastest for UI & Feature Dev)**:
+  Set `DB_CONNECTION=sqlite` and `DB_DATABASE=database/database.sqlite` in `.env`:
+  ```bash
+  touch database/database.sqlite
+  php artisan migrate --seed
+  ```
+- **PostgreSQL 17 (Full Concurrency & Production Parity)**:
+  Configure `.env` with your PostgreSQL database credentials and run:
+  ```bash
+  php artisan migrate --seed
+  ```
 
-# Build assets and start local server
-npm run build
+### 4. Run the Development Server
+```bash
+# Terminal 1: Watch frontend assets
+npm run dev
+
+# Terminal 2: Start local PHP server
 php artisan serve
 ```
+Visit [http://localhost:8000](http://localhost:8000) and click any **1-Click Demo Access** button to explore.
 
 ---
 
@@ -162,17 +189,39 @@ The application maintains comprehensive test coverage across business boundaries
 # Run full Pest test suite (158 tests)
 php artisan test --compact
 
-# Code style compliance
-vendor/bin/pint --test
+# Code style compliance check (Laravel Pint)
+composer lint:check
 
-# Static analysis (0 errors)
-vendor/bin/phpstan analyse
+# Auto-format code
+composer lint
+
+# Static analysis (PHPStan Level 6 - 0 errors)
+composer types:check
 ```
+
+*Note: Tests run in-memory on SQLite by default. 11 PostgreSQL-specific concurrency tests are skipped locally and verified against a live PostgreSQL 17 container in GitHub Actions CI.*
+
+---
+
+## 🤝 Contributing & Community
+
+We welcome contributions from developers of all skill levels! Whether you want to fix a typo, add a UI component, or optimize database queries:
+
+1. Read our **[Contributing Guide](CONTRIBUTING.md)** for local setup and branch conventions.
+2. Check out our **[Project Roadmap](ROADMAP.md)** to see current priorities and architectural boundaries.
+3. Browse issues labeled [`good first issue`](https://github.com/LuigiCarl/klinika-web/labels/good%20first%20issue) or [`help wanted`](https://github.com/LuigiCarl/klinika-web/labels/help%20wanted).
+4. Review our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
 
 ---
 
 ## 📦 Deployment to Render
 
-This repository includes a production-ready Render Blueprint ([`render.yaml`](render.yaml)) configured with managed PostgreSQL, automated migrations, seeders, and environment secrets.
+This repository includes a production-ready Render Blueprint ([`render.yaml`](render.yaml)) configured with managed PostgreSQL, automated migrations, seeders, background workers, and environment secrets.
 
-See the complete guide in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+See the complete production guide in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
+## 📄 License
+
+Klinikaly is open-source software licensed under the **[MIT License](LICENSE)**.

@@ -1,0 +1,64 @@
+name: 💡 Feature Request / Improvement
+description: Suggest an idea or operational improvement for Klinikaly
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing a feature for Klinikaly! We welcome proposals that enhance patient booking flow, staff triage efficiency, or system reliability.
+  - type: input
+    id: title
+    attributes:
+      label: Feature Title
+      description: A concise summary of the proposed feature.
+      placeholder: e.g. Patient SMS reminder dispatch via Twilio / Vonage
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement / User Need
+      description: What clinic problem, pain point, or workflow need does this feature address?
+      placeholder: e.g. Currently, patients only receive email notifications. Patients who do not monitor their inbox frequently miss appointment reminders...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & Workflow
+      description: Describe how the feature should behave and how users (Admin, Receptionist, or Patient) interact with it.
+      placeholder: e.g. Introduce an optional Notification Channel driver in clinic settings...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false
+  - type: dropdown
+    id: persona
+    attributes:
+      label: Primary User Persona
+      description: Who primarily benefits from this feature?
+      options:
+        - Patient (Public booking & self-service)
+        - Receptionist (Daily queue triage & check-in desk)
+        - Clinic Administrator (Roster, schedules, analytics & audits)
+        - Developer / System Operator (DevOps, testing, metrics)
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Architecture & Scope Alignment
+      options:
+        - label: This feature aligns with Klinikaly's single-clinic model (no multi-tenant sprawl).
+          required: true
+        - label: I have reviewed ROADMAP.md to ensure this does not duplicate current initiatives.
+          required: true
+        - label: I am willing to submit a Pull Request to implement or test this feature.
+          required: false
+
